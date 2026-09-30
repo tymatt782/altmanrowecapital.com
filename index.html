@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Altman Rowe Capital IRA services and retirement planning solutions.">
+  <title>Individual Retirement Accounts | Altman Rowe Capital</title>
+  <style>
+    :root{
+      --navy:#0b1f3a;--blue:#165dbe;--light:#f5f8fc;--white:#fff;
+      --text:#182536;--muted:#637083;--line:#dfe6ef;--green:#15803d;
+      --shadow:0 16px 45px rgba(11,31,58,.10);--radius:18px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:Inter,Arial,Helvetica,sans-serif;color:var(--text);background:#fff;line-height:1.6}
+    a{text-decoration:none;color:inherit}
+    .container{width:min(1120px,92%);margin:auto}
+    header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+    .nav{height:76px;display:flex;align-items:center;justify-content:space-between;gap:25px}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:800;color:var(--navy);font-size:19px}
+    .brand-mark{width:38px;height:38px;border-radius:10px;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:900}
+    .nav-links{display:flex;gap:26px;align-items:center;font-size:14px;color:#405069}
+    .nav-links a:hover{color:var(--blue)}
+    .nav-cta,.btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:10px;padding:13px 20px;font-weight:700;cursor:pointer}
+    .nav-cta,.btn-primary{background:var(--blue);color:#fff}
+    .btn-secondary{background:#fff;color:var(--navy);border:1px solid var(--line)}
+    .hero{background:linear-gradient(135deg,#f5f9ff 0%,#fff 58%,#eef5ff 100%);padding:88px 0 78px}
+    .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:60px;align-items:center}
+    .eyebrow{display:inline-flex;padding:7px 12px;border-radius:999px;background:#e8f1ff;color:var(--blue);font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:20px}
+    h1{font-size:clamp(42px,5.2vw,67px);line-height:1.05;letter-spacing:-.045em;color:var(--navy);margin-bottom:22px}
+    .hero p{font-size:18px;color:var(--muted);max-width:640px;margin-bottom:30px}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap}
+    .trust-row{display:flex;gap:22px;flex-wrap:wrap;margin-top:30px;color:#56657a;font-size:13px}
+    .trust-row span:before{content:"✓";color:var(--green);font-weight:900;margin-right:7px}
+    .portfolio-card{background:var(--navy);color:#fff;border-radius:24px;padding:30px;box-shadow:var(--shadow)}
+    .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .account-label{font-size:12px;color:#aebed4;text-transform:uppercase;letter-spacing:.08em}
+    .status{font-size:11px;padding:6px 9px;border:1px solid #406083;border-radius:999px;color:#d5e4f6}
+    .balance-label{font-size:13px;color:#afbdd0}.balance{font-size:42px;font-weight:800;margin:5px 0 5px}
+    .gain{color:#72e09a;font-weight:700;font-size:14px}
+    .mini-chart{height:100px;margin:25px 0 20px;display:flex;align-items:flex-end;gap:7px}
+    .mini-chart i{display:block;flex:1;background:#477bb4;border-radius:5px 5px 2px 2px}
+    .mini-chart i:nth-child(1){height:28%}.mini-chart i:nth-child(2){height:36%}.mini-chart i:nth-child(3){height:32%}
+    .mini-chart i:nth-child(4){height:49%}.mini-chart i:nth-child(5){height:57%}.mini-chart i:nth-child(6){height:52%}
+    .mini-chart i:nth-child(7){height:70%}.mini-chart i:nth-child(8){height:66%}.mini-chart i:nth-child(9){height:82%}
+    .mini-chart i:nth-child(10){height:92%}
+    .card-foot{display:flex;justify-content:space-between;border-top:1px solid #294361;padding-top:17px;font-size:12px;color:#aebed4}
+    section{padding:82px 0}
+    .section-head{text-align:center;max-width:700px;margin:0 auto 42px}
+    .section-head h2{font-size:38px;line-height:1.15;color:var(--navy);margin-bottom:12px}
+    .section-head p{color:var(--muted)}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+    .card{border:1px solid var(--line);border-radius:var(--radius);padding:28px;background:#fff;box-shadow:0 7px 25px rgba(11,31,58,.04)}
+    .icon{width:45px;height:45px;border-radius:12px;background:#edf4ff;color:var(--blue);display:grid;place-items:center;font-weight:900;margin-bottom:19px}
+    .card h3{color:var(--navy);margin-bottom:9px;font-size:21px}.card p{color:var(--muted);font-size:14px}
+    .calculator-wrap{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:stretch}
+    .calc-box{background:var(--light);border:1px solid var(--line);border-radius:var(--radius);padding:30px}
+    .field{margin-bottom:18px}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:7px}
+    .field input{width:100%;padding:13px 14px;border:1px solid #cfd8e4;border-radius:9px;font-size:15px;background:#fff;outline:none}
+    .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(22,93,190,.10)}
+    .result{background:var(--navy);color:#fff;border-radius:var(--radius);padding:35px;display:flex;flex-direction:column;justify-content:center}
+    .result small{color:#b7c6d8}.result h3{font-size:16px;margin:8px 0}.future-value{font-size:45px;font-weight:850;line-height:1.1;margin:5px 0 12px}.result p{color:#b7c6d8;font-size:13px}
+    .steps{background:var(--light)}.step-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}
+    .step{text-align:center;padding:10px 18px}.number{width:45px;height:45px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-weight:800;margin:0 auto 16px}.step h3{color:var(--navy);margin-bottom:7px}.step p{font-size:14px;color:var(--muted)}
+    .contact-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:45px}
+    .contact-copy h2{font-size:38px;line-height:1.15;color:var(--navy);margin-bottom:15px}.contact-copy p{color:var(--muted);margin-bottom:20px}
+    .contact-list{list-style:none;display:grid;gap:12px;color:#4e5d71;font-size:14px}.contact-list li:before{content:"✓";color:var(--green);font-weight:900;margin-right:8px}
+    form{border:1px solid var(--line);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow)}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}
+    textarea{min-height:125px;resize:vertical}.form-note{font-size:11px;color:#7a8798;margin-top:12px}
+    footer{background:#08182c;color:#b5c3d5;padding:42px 0 25px}
+    .footer-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}.footer-brand{color:#fff}.footer-links{display:flex;gap:20px;flex-wrap:wrap;font-size:13px}.footer-links a:hover{color:#fff}
+    .copyright{border-top:1px solid #20354e;margin-top:30px;padding-top:20px;font-size:12px}
+    @media(max-width:850px){
+      .hero-grid,.calculator-wrap,.contact-grid{grid-template-columns:1fr}
+      .cards,.step-grid{grid-template-columns:1fr}
+      .nav-links{display:none}
+      .hero{padding-top:65px}
+    }
+    @media(max-width:560px){
+      .form-grid{grid-template-columns:1fr}.full{grid-column:auto}
+      h1{font-size:43px}.section-head h2,.contact-copy h2{font-size:31px}
+      .balance{font-size:35px}.future-value{font-size:37px}
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <a class="brand" href="#top" aria-label="Altman Rowe Capital home">
+      <span class="brand-mark">A</span>
+      <span>Altman Rowe Capital</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#ira-types">IRA Options</a>
+      <a href="#calculator">Calculator</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#contact">Contact</a>
+      <a class="nav-cta" href="#contact">Request a Consultation</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Individual Retirement Accounts</span>
+        <h1>Secure Your Retirement with a Personalized IRA</h1>
+        <p>Explore retirement account solutions designed around your long-term goals, contribution strategy and financial priorities with Altman Rowe Capital.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#contact">Start a Consultation</a>
+          <a class="btn btn-secondary" href="#ira-types">Explore IRA Options</a>
+        </div>
+        <div class="trust-row">
+          <span>Personalized planning</span>
+          <span>Long-term focus</span>
+          <span>Clear account guidance</span>
+        </div>
+      </div>
+      <div class="portfolio-card">
+        <div class="card-top">
+          <div class="account-label">Retirement Portfolio</div>
+          <div class="status">Illustrative View</div>
+        </div>
+        <div class="balance-label">Illustrative portfolio value</div>
+        <div class="balance">$284,650</div>
+        <div class="gain">+8.42% annualized illustration</div>
+        <div class="mini-chart" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="card-foot"><span>Long-term growth</span><span>Illustration only</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ira-types">
+    <div class="container">
+      <div class="section-head">
+        <h2>Choose an IRA that fits your retirement strategy</h2>
+        <p>Different IRA structures can provide different tax treatment and contribution considerations. Eligibility and rules vary by individual circumstances.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="icon">T</div>
+          <h3>Traditional IRA</h3>
+          <p>Contributions may receive tax advantages depending on eligibility, while withdrawals are generally taxed as ordinary income under applicable rules.</p>
+        </article>
+        <article class="card">
+          <div class="icon">R</div>
+          <h3>Roth IRA</h3>
+          <p>Contributions are generally made with after-tax dollars. Qualified distributions may be tax-free subject to applicable requirements.</p>
+        </article>
+        <article class="card">
+          <div class="icon">S</div>
+          <h3>Simplified IRA</h3>
+          <p>Retirement arrangements designed for qualifying small-business owners and employees, subject to applicable eligibility and contribution rules.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="calculator" style="background:#f8fafc">
+    <div class="container">
+      <div class="section-head">
+        <h2>Retirement calculator</h2>
+        <p>Use this simple projection to explore how savings and regular contributions could grow over time.</p>
+      </div>
+      <div class="calculator-wrap">
+        <div class="calc-box">
+          <div class="field">
+            <label for="savings">Current retirement savings ($)</label>
+            <input id="savings" type="number" min="0" value="25000">
+          </div>
+          <div class="field">
+            <label for="monthly">Monthly contribution ($)</label>
+            <input id="monthly" type="number" min="0" value="500">
+          </div>
+          <div class="field">
+            <label for="years">Years to retirement</label>
+            <input id="years" type="number" min="1" value="25">
+          </div>
+          <div class="field">
+            <label for="returnRate">Assumed annual return (%)</label>
+            <input id="returnRate" type="number" min="0" step="0.1" value="7">
+          </div>
+          <button class="btn btn-primary" id="calculateBtn" type="button">Calculate Projection</button>
+        </div>
+        <div class="result">
+          <small>Estimated future value</small>
+          <div class="future-value" id="futureValue">$0</div>
+          <h3>Illustrative projection</h3>
+          <p>This calculator is for educational purposes only. Actual investment performance, taxes, fees, contribution limits and eligibility may affect results.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="steps">
+    <div class="container">
+      <div class="section-head">
+        <h2>A straightforward path to retirement planning</h2>
+        <p>Start with your goals, review available options and build a strategy appropriate to your circumstances.</p>
+      </div>
+      <div class="step-grid">
+        <div class="step"><div class="number">1</div><h3>Share your goals</h3><p>Tell us about your retirement timeline, savings objectives and priorities.</p></div>
+        <div class="step"><div class="number">2</div><h3>Review your options</h3><p>Discuss IRA structures and considerations that may apply to your situation.</p></div>
+        <div class="step"><div class="number">3</div><h3>Build your strategy</h3><p>Move forward with a retirement approach based on your selected goals and applicable requirements.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact">
+    <div class="container contact-grid">
+      <div class="contact-copy">
+        <span class="eyebrow">Get Started</span>
+        <h2>Request an IRA consultation</h2>
+        <p>Complete the form and provide a convenient way for the Altman Rowe Capital team to contact you about your retirement planning inquiry.</p>
+        <ul class="contact-list">
+          <li>Personalized IRA discussion</li>
+          <li>Retirement planning guidance</li>
+          <li>Account and contribution questions</li>
+          <li>Clear next-step information</li>
+        </ul>
+      </div>
+
+      <form id="consultationForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="firstName">First name</label>
+            <input id="firstName" name="firstName" required>
+          </div>
+          <div class="field">
+            <label for="lastName">Last name</label>
+            <input id="lastName" name="lastName" required>
+          </div>
+          <div class="field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" required>
+          </div>
+          <div class="field">
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel">
+          </div>
+          <div class="field full">
+            <label for="interest">IRA interest</label>
+            <select id="interest" name="interest" style="width:100%;padding:13px 14px;border:1px solid #cfd8e4;border-radius:9px;font-size:15px;background:#fff">
+              <option>Traditional IRA</option>
+              <option>Roth IRA</option>
+              <option>Simplified IRA</option>
+              <option>General retirement planning</option>
+            </select>
+          </div>
+          <div class="field full">
+            <label for="message">How can we help?</label>
+            <textarea id="message" name="message"></textarea>
+          </div>
+          <div class="full">
+            <button class="btn btn-primary" style="width:100%" type="submit">Request Consultation</button>
+            <div class="form-note">Do not submit passwords, account credentials, Social Security numbers or other highly sensitive information through this general inquiry form.</div>
+            <p id="formMessage" style="display:none;margin-top:12px;color:#15803d;font-size:13px;font-weight:700"></p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="brand footer-brand"><span class="brand-mark">A</span><span>Altman Rowe Capital</span></div>
+        <p style="font-size:12px;margin-top:12px;max-width:470px">Individual Retirement Account services and retirement planning information.</p>
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Use</a>
+        <a href="#">Disclosures</a>
+        <a href="#">Security</a>
+      </div>
+    </div>
+    <div class="copyright">© 2026 Altman Rowe Capital. All rights reserved. Investment products and services are subject to applicable terms, fees, risks and eligibility requirements.</div>
+  </div>
+</footer>
+
+<script>
+  function calculateProjection(){
+    const savings = Math.max(0, Number(document.getElementById('savings').value) || 0);
+    const monthly = Math.max(0, Number(document.getElementById('monthly').value) || 0);
+    const years = Math.max(1, Number(document.getElementById('years').value) || 1);
+    const annual = Math.max(0, Number(document.getElementById('returnRate').value) || 0);
+    const months = years * 12;
+    const monthlyRate = annual / 100 / 12;
+    let future = savings;
+    if(monthlyRate === 0){
+      future += monthly * months;
+    }else{
+      future = savings * Math.pow(1 + monthlyRate, months) +
+        monthly * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate);
+    }
+    document.getElementById('futureValue').textContent =
+      future.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+  }
+  document.getElementById('calculateBtn').addEventListener('click', calculateProjection);
+  ['savings','monthly','years','returnRate'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', calculateProjection);
+  });
+  calculateProjection();
+
+  document.getElementById('consultationForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    const msg=document.getElementById('formMessage');
+    msg.style.display='block';
+    msg.textContent='Your consultation request has been prepared. Connect this form to your secure form/email service to receive submissions.';
+  });
+</script>
+</body>
+</html>
