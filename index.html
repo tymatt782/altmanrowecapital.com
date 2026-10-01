@@ -225,7 +225,60 @@
         </ul>
       </div>
 
-      <form id="consultationForm">
+      <form action="https://api.web3forms.com/submit" method="POST">
+
+  <input type="hidden" name="access_key" value="16e095c8-ebc4-4f8c-843a-55fec226b53e">
+
+  <input type="hidden" name="subject" value="New Consultation Request - Altman Rowe Capital">
+
+  <div class="form-grid">
+    <div class="field">
+      <label for="firstName">First name</label>
+      <input id="firstName" name="firstName" type="text" required>
+    </div>
+
+    <div class="field">
+      <label for="lastName">Last name</label>
+      <input id="lastName" name="lastName" type="text" required>
+    </div>
+
+    <div class="field">
+      <label for="email">Email address</label>
+      <input id="email" name="email" type="email" required>
+    </div>
+
+    <div class="field">
+      <label for="phone">Phone number</label>
+      <input id="phone" name="phone" type="tel">
+    </div>
+
+    <div class="field full">
+      <label for="interest">IRA interest</label>
+      <select id="interest" name="interest" style="width:100%;padding:13px 14px;border:1px solid #cfd8e4;border-radius:9px;font-size:15px;background:#fff">
+        <option>Traditional IRA</option>
+        <option>Roth IRA</option>
+        <option>Simplified IRA</option>
+        <option>General retirement planning</option>
+      </select>
+    </div>
+
+    <div class="field full">
+      <label for="message">How can we help?</label>
+      <textarea id="message" name="message" required></textarea>
+    </div>
+
+    <div class="full">
+      <button class="btn btn-primary" style="width:100%" type="submit">
+        Request Consultation
+      </button>
+
+      <div class="form-note">
+        Do not submit passwords, account credentials, Social Security numbers or other highly sensitive information through this general inquiry form.
+      </div>
+    </div>
+  </div>
+
+      </form>
         <div class="form-grid">
           <div class="field">
             <label for="firstName">First name</label>
@@ -309,7 +362,10 @@
   });
   calculateProjection();
 
-  document.getElementById('consultationForm').addEventListener('submit', function(e){
+  calculateProjection();
+</script>
+</body>
+</html>{
     e.preventDefault();
     const msg=document.getElementById('formMessage');
     msg.style.display='block';
