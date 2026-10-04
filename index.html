@@ -1,4 +1,4 @@
-g<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -2171,18 +2171,28 @@ g<!DOCTYPE html>
   </div>
 
 
-<!-- JAVASCRIPT -->
+  <!-- JAVASCRIPT -->
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-const SUPABASE_URL = "...";
-const SUPABASE_PUBLISHABLE_KEY = "...";
+    /* ------------------------------
+       SUPABASE CLIENT (guarded)
+    ------------------------------ */
 
-const supabaseClient = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
+    const SUPABASE_URL = "https://rnzvtrivgdhlfrxlmpxs.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3_pqv5zcVcrVb_qcG7yUOg_xzEBTN-t";
+
+    let supabaseClient = null;
+
+    if (window.supabase) {
+      supabaseClient = window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_PUBLISHABLE_KEY
+      );
+    } else {
+      console.warn("Supabase failed to load. Auth features are disabled.");
+    }
 
     /* ------------------------------
        MODALS
@@ -2234,7 +2244,15 @@ const supabaseClient = window.supabase.createClient(
       const password = document.getElementById("loginPassword").value;
       const loginMsg = document.getElementById("loginMsg");
 
+      if (!supabaseClient) {
+        loginMsg.textContent =
+          "Authentication service failed to load. Please refresh the page.";
+        loginMsg.style.color = "#b91c1c";
+        return;
+      }
+
       loginMsg.textContent = "Signing in...";
+      loginMsg.style.color = "#64748b";
 
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: email,
@@ -2243,25 +2261,18 @@ const supabaseClient = window.supabase.createClient(
 
       if (error) {
         loginMsg.textContent = error.message;
+        loginMsg.style.color = "#b91c1c";
         return;
       }
 
       loginMsg.textContent = "Login successful. Loading your account...";
+      loginMsg.style.color = "#15803d";
 
       closeModal("loginModal");
 
       document.getElementById("dashboard").scrollIntoView({
         behavior: "smooth"
       });
-    }
-      event.preventDefault();
-
-      const message = document.getElementById("loginMsg");
-
-      message.textContent =
-        "This front-end sign-in screen is not connected to live authentication.";
-
-      message.style.color = "#b45309";
     }
 
 
@@ -2316,20 +2327,30 @@ const supabaseClient = window.supabase.createClient(
       const lastName = document.getElementById("registerLastName").value.trim();
       const email = document.getElementById("registerEmail").value.trim();
       const password = document.getElementById("registerPassword").value;
-      const confirmPassword = document.getElementById("registerConfirmPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
       const registerMsg = document.getElementById("registerMsg");
 
-      if (password !== confirmPassword) {
-        registerMsg.textContent = "Passwords do not match.";
+      if (!supabaseClient) {
+        registerMsg.textContent =
+          "Authentication service failed to load. Please refresh the page.";
+        registerMsg.style.color = "#b91c1c";
         return;
       }
 
-      if (password.length < 6) {
-        registerMsg.textContent = "Password must be at least 6 characters.";
+      if (password !== confirmPassword) {
+        registerMsg.textContent = "Passwords do not match.";
+        registerMsg.style.color = "#b91c1c";
+        return;
+      }
+
+      if (password.length < 8) {
+        registerMsg.textContent = "Password must be at least 8 characters.";
+        registerMsg.style.color = "#b91c1c";
         return;
       }
 
       registerMsg.textContent = "Creating your account...";
+      registerMsg.style.color = "#64748b";
 
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
@@ -2344,41 +2365,15 @@ const supabaseClient = window.supabase.createClient(
 
       if (error) {
         registerMsg.textContent = error.message;
+        registerMsg.style.color = "#b91c1c";
         return;
       }
 
       registerMsg.textContent =
         "Account created successfully. Please check your email to confirm your account.";
+      registerMsg.style.color = "#15803d";
 
       event.target.reset();
-    }
-      event.preventDefault();
-
-      const password =
-        document.getElementById("registerPassword").value;
-
-      const confirmPassword =
-        document.getElementById("confirmPassword").value;
-
-      const message =
-        document.getElementById("registerMsg");
-
-
-      if (password !== confirmPassword) {
-
-        message.textContent =
-          "Passwords do not match.";
-
-        message.style.color = "#b91c1c";
-
-        return;
-      }
-
-
-      message.textContent =
-        "This registration interface is ready for connection to a secure authentication system.";
-
-      message.style.color = "#15803d";
     }
 
 
