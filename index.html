@@ -1239,8 +1239,11 @@
         <button class="btn btn-primary" id="headerCreateBtn" onclick="openModal('registerModal')">
           Create Account
         </button>
-<button class="btn btn-dark hidden" id="adminBtn" 
-</button>
+
+        <button class="btn btn-dark hidden" id="adminBtn" onclick="openAdminPanel()">
+          Admin
+        </button>
+
         <button class="btn btn-outline hidden" id="headerSignOutBtn" onclick="handleSignOut()">
           Sign Out
         </button>
@@ -2195,13 +2198,49 @@
         </div>
 
         <div class="field" id="actionMethodWrap">
-          <label for="actionMethod">Method</label>
-          <select class="form-control" id="actionMethod">
-            <option>Bank transfer (ACH)</option>
-            <option>Wire transfer</option>
-            <option>Debit card</option>
-          </select>
-        </div>
+  <label for="actionMethod">Method</label>
+  <select class="form-control" id="actionMethod" onchange="handleFundMethodChange()">
+    <option>Bank transfer (ACH)</option>
+    <option>Wire transfer</option>
+    <option>Debit card</option>
+    <option>Bitcoin (BTC)</option>
+    <option>Ethereum (ETH)</option>
+    <option>USDC (ERC-20)</option>
+  </select>
+</div>
+
+<!-- BITCOIN WALLET DISPLAY (hidden until Bitcoin is chosen) -->
+<div class="field hidden" id="btcWalletWrap">
+  <label>Bitcoin Deposit Address (BTC — native segwit)</label>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input
+      class="form-control"
+      type="text"
+      id="btcWalletAddress"
+      value="bc1qv4j2drwc30rq9nwz6pyyzn6rpdt0dy23uwl3q5"
+      readonly
+      onclick="this.select()"
+      style="font-family:monospace;font-size:12px;"
+    >
+    <button
+      type="button"
+      class="btn btn-outline"
+      onclick="copyBtcAddress()"
+      style="white-space:nowrap;"
+    >
+      Copy
+    </button>
+  </div>
+
+  <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
+    ⚠️ Send <strong>only Bitcoin (BTC)</strong> to this address on the
+    Bitcoin network. Sending any other asset or using the wrong network
+    will result in permanent loss of funds.
+  </p>
+
+  <p id="btcCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+</div>
 
         <div class="field hidden" id="actionFromWrap">
           <label for="actionFrom">From</label>
@@ -2836,16 +2875,19 @@
       registerMsg.textContent = "Creating your account...";
       registerMsg.style.color = "#64748b";
 
-      const { data, error } = await supabaseClient.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName
-          }
-        }
-      });
+      const accountType = document.getElementById("accountType").value;
+
+const { data, error } = await supabaseClient.auth.signUp({
+  email: email,
+  password: password,
+  options: {
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      account_type: accountType
+    }
+  }
+});
 
       if (error) {
         registerMsg.textContent = error.message;
@@ -3051,135 +3093,84 @@
        (front-end only, per Supabase user)
     ------------------------------ */
 
-    /* ------------------------------
-       AUTHENTICATED DASHBOARD
-       (Supabase-backed, per user)
-    ------------------------------ */
+    const DASHBOARD_STATE_KEY = "arc_dashboard_state_v1";
 
     const DEFAULT_ACCOUNT = {
-      availableBalance: 0,
-      totalPortfolio: 0,
-      ira: 0,
-      digitalAssets: 0,
-      transactions: []
-    };
+  availableBalance: 0,
+  totalPortfolio: 0,
+  ira: 0,
+  digitalAssets: 0,
+  transactions: []
+};
 
     let currentUser = null;
 
 
     function formatUSD(amount) {
-      return (Number(amount) || 0).toLocaleString("en-US", {
+      return amount.toLocaleString("en-US", {
         style: "currency",
         currency: "USD"
       });
     }
 
 
-    function rowToState(row) {
-      return {
-        availableBalance: Number(row.available_balance) || 0,
-        totalPortfolio: Number(row.total_portfolio) || 0,
-        ira: Number(row.ira) || 0,
-        digitalAssets: Number(row.digital_assets) || 0,
-        transactions: Array.isArray(row.transactions) ? row.transactions : []
-      };
-    }
+    function loadAccountState(user) {
 
+      let all = {};
 
-    function stateToRow(user, state) {
-      return {
-        user_id: user.id,
-        available_balance: state.availableBalance,
-        total_portfolio: state.totalPortfolio,
-        ira: state.ira,
-        digital_assets: state.digitalAssets,
-        transactions: state.transactions,
-        updated_at: new Date().toISOString()
-      };
-    }
-
-
-    async function loadAccountState(user) {
-
-      if (!supabaseClient) {
-        return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+      try {
+        all = JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        all = {};
       }
 
-      const { data, error } = await supabaseClient
-        .from("accounts")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.warn("Could not load account state:", error.message);
-        return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+      if (!all[user.id]) {
+        all[user.id] = JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+        saveAllAccountState(all);
       }
 
-      if (data) {
-        return rowToState(data);
-      }
-
-      // First login for this user — create a zero-balance account
-      const state = JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
-
-      const { error: insertError } = await supabaseClient
-        .from("accounts")
-        .insert(stateToRow(user, state));
-
-      if (insertError) {
-        console.warn("Could not create account row:", insertError.message);
-      }
-
-      return state;
+      return all[user.id];
 
     }
 
 
-    async function saveAccountState(user, state) {
-
-      if (!supabaseClient) return;
-
-      const { error } = await supabaseClient
-        .from("accounts")
-        .upsert(stateToRow(user, state));
-
-      if (error) {
-        console.warn("Could not save account state:", error.message);
+    function saveAllAccountState(all) {
+      try {
+        localStorage.setItem(
+          DASHBOARD_STATE_KEY,
+          JSON.stringify(all)
+        );
+      } catch (e) {
+        console.warn("Could not persist dashboard state.", e);
       }
+    }
+
+
+    function saveAccountState(user, state) {
+
+      let all = {};
+
+      try {
+        all = JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        all = {};
+      }
+
+      all[user.id] = state;
+      saveAllAccountState(all);
 
     }
 
 
-    async function readAllAccountStates() {
-
-      if (!supabaseClient) return {};
-
-      const { data, error } = await supabaseClient
-        .from("accounts")
-        .select("*");
-
-      if (error) {
-        console.warn("Could not load accounts:", error.message);
-        return {};
-      }
-
-      const out = {};
-
-      (data || []).forEach(function(row) {
-        out[row.user_id] = rowToState(row);
-      });
-
-      return out;
-
-    }
-
-
-    async function renderDashboard(user) {
+    function renderDashboard(user) {
 
       currentUser = user;
 
-      const state = await loadAccountState(user);
+      const state = loadAccountState(user);
 
       const meta = user.user_metadata || {};
       const firstName = meta.first_name || "";
@@ -3291,15 +3282,15 @@
       const headerSignOutBtn =
         document.getElementById("headerSignOutBtn");
 
-      const adminBtn =
-        document.getElementById("adminBtn");
-
       const signedOutView =
         document.getElementById("signedOutView");
 
       const signedInView =
         document.getElementById("signedInView");
 
+
+      const adminBtn =
+        document.getElementById("adminBtn");
 
       if (user) {
 
@@ -3358,37 +3349,97 @@
 
     function openAccountAction(type) {
 
-      const titles = {
-        fund: ["Fund Account", "Queue a deposit request."],
-        withdraw: ["Withdraw", "Queue a withdrawal request."],
-        transfer: ["Transfer", "Queue an internal transfer request."]
-      };
+  const titles = {
+    fund: ["Fund Account", "Queue a deposit request."],
+    withdraw: ["Withdraw", "Queue a withdrawal request."],
+    transfer: ["Transfer", "Queue an internal transfer request."]
+  };
 
-      document.getElementById("actionType").value = type;
-      document.getElementById("actionTitle").textContent = titles[type][0];
-      document.getElementById("actionSubtitle").textContent = titles[type][1];
+  document.getElementById("actionType").value = type;
+  document.getElementById("actionTitle").textContent = titles[type][0];
+  document.getElementById("actionSubtitle").textContent = titles[type][1];
 
-      document.getElementById("actionMethodWrap").classList.toggle(
-        "hidden", type === "transfer"
-      );
+  document.getElementById("actionMethodWrap").classList.toggle(
+    "hidden", type === "transfer"
+  );
 
-      document.getElementById("actionFromWrap").classList.toggle(
-        "hidden", type !== "transfer"
-      );
+  document.getElementById("actionFromWrap").classList.toggle(
+    "hidden", type !== "transfer"
+  );
 
-      document.getElementById("actionToWrap").classList.toggle(
-        "hidden", type !== "transfer"
-      );
+  document.getElementById("actionToWrap").classList.toggle(
+    "hidden", type !== "transfer"
+  );
 
-      document.getElementById("actionForm").reset();
-      document.getElementById("actionMsg").textContent = "";
+  document.getElementById("actionForm").reset();
+  document.getElementById("actionMsg").textContent = "";
 
-      openModal("actionModal");
+  const meta = (currentUser && currentUser.user_metadata) || {};
+  const accountType = meta.account_type || "Online Banking";
+  const isCrypto = accountType === "Crypto Account";
 
-    }
+  const methodSelect = document.getElementById("actionMethod");
 
+  if (isCrypto) {
+    methodSelect.innerHTML =
+      "<option>Bitcoin (BTC)</option>" +
+      "<option>Ethereum (ETH)</option>" +
+      "<option>USDC (ERC-20)</option>" +
+      "<option>Bank transfer (ACH)</option>" +
+      "<option>Wire transfer</option>";
+  } else {
+    methodSelect.innerHTML =
+      "<option>Bank transfer (ACH)</option>" +
+      "<option>Wire transfer</option>" +
+      "<option>Debit card</option>";
+  }
 
-    async function submitAccountAction(event) {
+  const btcWrap = document.getElementById("btcWalletWrap");
+  if (btcWrap) btcWrap.classList.add("hidden");
+
+  const copyMsg = document.getElementById("btcCopyMsg");
+  if (copyMsg) copyMsg.textContent = "";
+
+  openModal("actionModal");
+
+  if (type === "fund") handleFundMethodChange();
+}
+function handleFundMethodChange() {
+
+  const method = document.getElementById("actionMethod").value;
+  const btcWrap = document.getElementById("btcWalletWrap");
+
+  if (!btcWrap) return;
+
+  const isBitcoin = method === "Bitcoin (BTC)";
+
+  btcWrap.classList.toggle("hidden", !isBitcoin);
+}
+
+function copyBtcAddress() {
+
+  const input = document.getElementById("btcWalletAddress");
+  const msg = document.getElementById("btcCopyMsg");
+
+  input.select();
+  input.setSelectionRange(0, 99999);
+
+  navigator.clipboard.writeText(input.value)
+    .then(function () {
+      msg.textContent = "✓ Address copied to clipboard";
+      msg.style.color = "#15803d";
+    })
+    .catch(function () {
+      // Fallback for older browsers
+      document.execCommand("copy");
+      msg.textContent = "✓ Address copied";
+      msg.style.color = "#15803d";
+    });
+
+  setTimeout(function () { msg.textContent = ""; }, 2500);
+}
+
+    function submitAccountAction(event) {
 
       event.preventDefault();
 
@@ -3407,9 +3458,6 @@
       const actionMsg =
         document.getElementById("actionMsg");
 
-      const submitButton =
-        document.getElementById("actionSubmit");
-
 
       if (!amount || amount <= 0) {
         actionMsg.textContent = "Please enter a valid amount.";
@@ -3418,10 +3466,7 @@
       }
 
 
-      submitButton.disabled = true;
-      submitButton.textContent = "Queueing...";
-
-      const state = await loadAccountState(currentUser);
+      const state = loadAccountState(currentUser);
 
       const now = new Date();
 
@@ -3453,8 +3498,6 @@
           actionMsg.textContent =
             "Amount exceeds your available balance.";
           actionMsg.style.color = "#b91c1c";
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit Request";
           return;
         }
 
@@ -3479,8 +3522,6 @@
           actionMsg.textContent =
             "Source and destination must be different.";
           actionMsg.style.color = "#b91c1c";
-          submitButton.disabled = false;
-          submitButton.textContent = "Submit Request";
           return;
         }
 
@@ -3503,11 +3544,8 @@
       });
 
 
-      await saveAccountState(currentUser, state);
-      await renderDashboard(currentUser);
-
-      submitButton.disabled = false;
-      submitButton.textContent = "Submit Request";
+      saveAccountState(currentUser, state);
+      renderDashboard(currentUser);
 
       actionMsg.textContent =
         "Request queued. It will remain pending until a regulated backend is connected.";
@@ -3521,13 +3559,33 @@
 
 
     /* ------------------------------
+       SESSION CHECK ON PAGE LOAD
+    ------------------------------ */
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      async function() {
+
+        if (!supabaseClient) return;
+
+        const { data } =
+          await supabaseClient.auth.getSession();
+
+        if (data && data.session && data.session.user) {
+          updateAuthUI(data.session.user);
+        }
+
+      }
+    );
+
+
+    /* ------------------------------
        ADMIN PANEL (front-end only)
     ------------------------------ */
 
     const ADMIN_EMAILS = [
-      "khlisa99@gmail.com",
       "admin@altmanrowecapital.com"
-      // add more admin emails here
+      // add more admin emails here, e.g. "you@example.com"
     ];
 
 
@@ -3535,10 +3593,21 @@
       return (
         !!user &&
         !!user.email &&
-        ADMIN_EMAILS
-          .map(function(e) { return e.toLowerCase(); })
-          .includes(user.email.toLowerCase())
+        ADMIN_EMAILS.includes(user.email.toLowerCase())
       );
+    }
+
+
+    function readAllAccountStates() {
+
+      try {
+        return JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        return {};
+      }
+
     }
 
 
@@ -3555,9 +3624,9 @@
     }
 
 
-    async function renderAdminPanel() {
+    function renderAdminPanel() {
 
-      const all = await readAllAccountStates();
+      const all = readAllAccountStates();
       const userIds = Object.keys(all);
 
       const listEl = document.getElementById("adminUserList");
@@ -3567,8 +3636,7 @@
 
         listEl.innerHTML =
           '<div class="admin-table-row">' +
-            '<span class="admin-id">No account rows yet — ' +
-            "users get a zero-balance row on first sign-in</span>" +
+            '<span class="admin-id">No stored users on this device</span>' +
             "<span>—</span><span>—</span><span>—</span>" +
           "</div>";
 
@@ -3609,21 +3677,15 @@
     }
 
 
-    async function submitAdminAdjustment(event) {
+    function submitAdminAdjustment(event) {
 
       event.preventDefault();
 
       const userId =
         document.getElementById("adminUser").value;
 
-      const areaSelect =
-        document.getElementById("adminArea");
-
       const area =
-        areaSelect.value;
-
-      const areaLabel =
-        areaSelect.options[areaSelect.selectedIndex].text;
+        document.getElementById("adminArea").value;
 
       const direction =
         document.getElementById("adminDirection").value;
@@ -3636,9 +3698,6 @@
 
       const adminMsg =
         document.getElementById("adminMsg");
-
-      const adminSubmit =
-        document.getElementById("adminSubmit");
 
 
       if (!userId) {
@@ -3654,18 +3713,12 @@
       }
 
 
-      adminSubmit.disabled = true;
-      adminSubmit.textContent = "Applying...";
-
-
-      const all = await readAllAccountStates();
+      const all = readAllAccountStates();
       const state = all[userId];
 
       if (!state) {
-        adminMsg.textContent = "Selected user no longer has an account row.";
+        adminMsg.textContent = "Selected user no longer has stored state.";
         adminMsg.style.color = "#b91c1c";
-        adminSubmit.disabled = false;
-        adminSubmit.textContent = "Apply Adjustment";
         return;
       }
 
@@ -3675,10 +3728,10 @@
         if (amount > state[area]) {
           adminMsg.textContent =
             "Cannot remove more than the current " +
-            areaLabel.toLowerCase() + ".";
+            document.getElementById("adminArea").options[
+              document.getElementById("adminArea").selectedIndex
+            ].text.toLowerCase() + ".";
           adminMsg.style.color = "#b91c1c";
-          adminSubmit.disabled = false;
-          adminSubmit.textContent = "Apply Adjustment";
           return;
         }
 
@@ -3696,6 +3749,11 @@
 
 
       const now = new Date();
+
+      const areaLabel =
+        document.getElementById("adminArea").options[
+          document.getElementById("adminArea").selectedIndex
+        ].text;
 
       state.transactions.push({
 
@@ -3723,12 +3781,7 @@
       });
 
 
-      await supabaseClient
-        .from("accounts")
-        .upsert(stateToRow({ id: userId }, state));
-
-      adminSubmit.disabled = false;
-      adminSubmit.textContent = "Apply Adjustment";
+      saveAllAccountState(all);
 
       renderAdminPanel();
 
@@ -3743,27 +3796,6 @@
       }
 
     }
-
-
-    /* ------------------------------
-       SESSION CHECK ON PAGE LOAD
-    ------------------------------ */
-
-    document.addEventListener(
-      "DOMContentLoaded",
-      async function() {
-
-        if (!supabaseClient) return;
-
-        const { data } =
-          await supabaseClient.auth.getSession();
-
-        if (data && data.session && data.session.user) {
-          updateAuthUI(data.session.user);
-        }
-
-      }
-    );
 
 
     /* ------------------------------
