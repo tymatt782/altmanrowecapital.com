@@ -898,6 +898,10 @@
       font-size: 11px;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
     /* MOBILE */
     @media (max-width: 900px) {
       .nav-links {
@@ -1019,12 +1023,16 @@
       </nav>
 
       <div class="nav-actions">
-        <button class="btn btn-outline" onclick="openModal('loginModal')">
+        <button class="btn btn-outline" id="headerSignInBtn" onclick="openModal('loginModal')">
           Sign In
         </button>
 
-        <button class="btn btn-primary" onclick="openModal('registerModal')">
+        <button class="btn btn-primary" id="headerCreateBtn" onclick="openModal('registerModal')">
           Create Account
+        </button>
+
+        <button class="btn btn-outline hidden" id="headerSignOutBtn" onclick="handleSignOut()">
+          Sign Out
         </button>
       </div>
 
@@ -1177,15 +1185,24 @@
 
           <div class="dashboard-header">
             <div>
-              <h3>Welcome back</h3>
+              <h3 id="dashboardTitle">Welcome back</h3>
               <p>Your account overview</p>
             </div>
 
             <button
               class="btn btn-outline"
+              id="dashboardSignInBtn"
               onclick="openModal('loginModal')"
             >
               Sign In
+            </button>
+
+            <button
+              class="btn btn-danger hidden"
+              id="dashboardSignOutBtn"
+              onclick="handleSignOut()"
+            >
+              Sign Out
             </button>
           </div>
 
@@ -2201,6 +2218,12 @@
     function openModal(id) {
       document.getElementById(id).classList.add("show");
       document.body.style.overflow = "hidden";
+
+      const loginMsg = document.getElementById("loginMsg");
+      if (loginMsg) loginMsg.textContent = "";
+
+      const registerMsg = document.getElementById("registerMsg");
+      if (registerMsg) registerMsg.textContent = "";
     }
 
 
@@ -2267,6 +2290,8 @@
 
       loginMsg.textContent = "Login successful. Loading your account...";
       loginMsg.style.color = "#15803d";
+
+      updateAuthUI(data.user);
 
       closeModal("loginModal");
 
@@ -2560,6 +2585,101 @@
       );
 
     }
+
+
+    /* ------------------------------
+       AUTH UI STATE
+    ------------------------------ */
+
+    function updateAuthUI(user) {
+
+      const headerSignInBtn =
+        document.getElementById("headerSignInBtn");
+
+      const headerCreateBtn =
+        document.getElementById("headerCreateBtn");
+
+      const headerSignOutBtn =
+        document.getElementById("headerSignOutBtn");
+
+      const dashboardTitle =
+        document.getElementById("dashboardTitle");
+
+      const dashboardSignInBtn =
+        document.getElementById("dashboardSignInBtn");
+
+      const dashboardSignOutBtn =
+        document.getElementById("dashboardSignOutBtn");
+
+
+      if (user) {
+
+        headerSignInBtn.classList.add("hidden");
+        headerCreateBtn.classList.add("hidden");
+        headerSignOutBtn.classList.remove("hidden");
+
+        dashboardSignInBtn.classList.add("hidden");
+        dashboardSignOutBtn.classList.remove("hidden");
+
+        const firstName =
+          user.user_metadata &&
+          user.user_metadata.first_name;
+
+        dashboardTitle.textContent =
+          firstName
+            ? "Welcome back, " + firstName
+            : "Welcome back";
+
+      } else {
+
+        headerSignInBtn.classList.remove("hidden");
+        headerCreateBtn.classList.remove("hidden");
+        headerSignOutBtn.classList.add("hidden");
+
+        dashboardSignInBtn.classList.remove("hidden");
+        dashboardSignOutBtn.classList.add("hidden");
+
+        dashboardTitle.textContent = "Welcome back";
+
+      }
+
+    }
+
+
+    async function handleSignOut() {
+
+      if (supabaseClient) {
+        await supabaseClient.auth.signOut();
+      }
+
+      updateAuthUI(null);
+
+      document.getElementById("top").scrollIntoView({
+        behavior: "smooth"
+      });
+
+    }
+
+
+    /* ------------------------------
+       SESSION CHECK ON PAGE LOAD
+    ------------------------------ */
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      async function() {
+
+        if (!supabaseClient) return;
+
+        const { data } =
+          await supabaseClient.auth.getSession();
+
+        if (data && data.session && data.session.user) {
+          updateAuthUI(data.session.user);
+        }
+
+      }
+    );
 
 
     /* ------------------------------
