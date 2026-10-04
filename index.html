@@ -2888,6 +2888,15 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
   }
 });
+      if (!error && data && data.user) {
+  await supabaseClient.from("balances").insert({
+    user_id: data.user.id,
+    available_balance: 0,
+    total_portfolio: 0,
+    ira: 0,
+    digital_assets: 0
+  });
+      }
 
       if (error) {
         registerMsg.textContent = error.message;
