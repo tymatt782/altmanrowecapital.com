@@ -603,6 +603,55 @@
       line-height: 1.5;
     }
 
+    /* LIVE TRADING SIGNALS */
+    .signals-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .signals-row {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 13px 18px;
+      align-items: center;
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+    }
+
+    .signals-row:first-child {
+      border-top: 0;
+    }
+
+    .signals-head {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .signal-long {
+      color: var(--green);
+      font-weight: 800;
+    }
+
+    .signal-short {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    @media (max-width: 650px) {
+      .signals-box {
+        overflow-x: auto;
+      }
+
+      .signals-row {
+        min-width: 560px;
+      }
+    }
+
     /* CONSULTATION */
     .consultation {
       background: var(--light);
@@ -1436,93 +1485,210 @@
 
             <div class="chips">
 
+              <span class="chip" id="dashTypeChip">Online Banking</span>
               <span class="chip" id="dashStatusChip">Account Status: Active</span>
               <span class="chip neutral" id="dashEmailChip">Email: Verified</span>
 
             </div>
 
 
-            <div class="balance-grid">
+            <!-- ============ CRYPTO ACCOUNT VIEW ============ -->
+            <div id="cryptoView" class="hidden">
 
-              <div class="balance-card">
-                <span>Available balance</span>
-                <strong id="dashAvailable">$0.00</strong>
+              <div class="balance-grid">
+
+                <div class="balance-card">
+                  <span>Available balance</span>
+                  <strong id="dashAvailable">$0.00</strong>
+                </div>
+
+                <div class="balance-card">
+                  <span>Crypto portfolio value</span>
+                  <strong id="dashTotal">$0.00</strong>
+                </div>
+
+                <div class="balance-card">
+                  <span>Portfolio change</span>
+                  <strong class="positive" id="dashChange">+0.00%</strong>
+                </div>
+
               </div>
 
-              <div class="balance-card">
-                <span>Total portfolio value</span>
-                <strong id="dashTotal">$0.00</strong>
+
+              <div class="dash-actions">
+
+                <button
+                  class="btn btn-primary"
+                  onclick="openAccountAction('fund')"
+                >
+                  Fund Account
+                </button>
+
+                <button
+                  class="btn btn-dark"
+                  onclick="openAccountAction('withdraw')"
+                >
+                  Withdraw
+                </button>
+
+                <button
+                  class="btn btn-outline"
+                  onclick="scrollToSection('liveSignalsBlock')"
+                >
+                  Live Trading Signals
+                </button>
+
+                <button
+                  class="btn btn-danger"
+                  onclick="handleSignOut()"
+                >
+                  Sign Out
+                </button>
+
               </div>
 
-              <div class="balance-card">
-                <span>Portfolio change</span>
-                <strong class="positive">+8.42%</strong>
+
+              <div class="notice-bar">
+                Fund and Withdraw actions below create
+                <strong>front-end requests only</strong>. They are stored in
+                your browser and marked as pending until a regulated custody
+                backend is connected. No deposits are accepted, no
+                withdrawals are processed and no money is moved.
+              </div>
+
+
+              <div class="sub-heading">Crypto holdings</div>
+
+              <div class="portfolio-split">
+
+                <div class="portfolio-item">
+                  <span>Crypto holdings (USD value)</span>
+                  <strong id="dashCryptoHoldings">$0.00</strong>
+                </div>
+
+                <div class="portfolio-item">
+                  <span>Queued requests</span>
+                  <strong id="dashOpenPositions">0</strong>
+                </div>
+
+              </div>
+
+
+              <div class="sub-heading" id="liveSignalsBlock">
+                Live trading signals
+              </div>
+
+              <div class="signals-box">
+
+                <div class="signals-row signals-head">
+                  <span>Asset</span>
+                  <span>Signal</span>
+                  <span>Entry</span>
+                  <span>Take Profit</span>
+                  <span>Stop Loss</span>
+                </div>
+
+                <div id="signalsList"></div>
+
+              </div>
+
+              <p class="web3-note">
+                Trading signals are illustrative interface data generated
+                for display purposes. They are not investment advice and are
+                not connected to a live trading engine.
+              </p>
+
+              <p style="margin-top:12px;">
+                <button
+                  class="btn btn-outline"
+                  onclick="renderTradingSignals()"
+                >
+                  Refresh Signals
+                </button>
+              </p>
+
+            </div>
+
+
+            <!-- ============ ONLINE BANKING VIEW ============ -->
+            <div id="bankingView" class="hidden">
+
+              <div class="balance-grid">
+
+                <div class="balance-card">
+                  <span>Available balance</span>
+                  <strong id="bankAvailable">$0.00</strong>
+                </div>
+
+                <div class="balance-card">
+                  <span>Total account value</span>
+                  <strong id="bankTotal">$0.00</strong>
+                </div>
+
+                <div class="balance-card">
+                  <span>Account growth</span>
+                  <strong class="positive">+0.00%</strong>
+                </div>
+
+              </div>
+
+
+              <div class="dash-actions">
+
+                <button
+                  class="btn btn-primary"
+                  onclick="openBankingFund()"
+                >
+                  Fund Account
+                </button>
+
+                <button
+                  class="btn btn-dark"
+                  onclick="openAccountAction('withdraw')"
+                >
+                  Withdraw
+                </button>
+
+                <button
+                  class="btn btn-danger"
+                  onclick="handleSignOut()"
+                >
+                  Sign Out
+                </button>
+
+              </div>
+
+
+              <div class="notice-bar">
+                To fund your Online Banking account, please
+                <strong>contact our support team</strong>. Support will
+                provide verified deposit instructions for your account.
+                Withdrawal requests below are front-end requests only and
+                remain pending until a regulated banking backend is
+                connected.
+              </div>
+
+
+              <div class="sub-heading">Banking overview</div>
+
+              <div class="portfolio-split">
+
+                <div class="portfolio-item">
+                  <span>Checking</span>
+                  <strong id="bankChecking">$0.00</strong>
+                </div>
+
+                <div class="portfolio-item">
+                  <span>Savings</span>
+                  <strong id="bankSavings">$0.00</strong>
+                </div>
+
               </div>
 
             </div>
 
 
-            <div class="dash-actions">
-
-              <button
-                class="btn btn-primary"
-                onclick="openAccountAction('fund')"
-              >
-                Fund Account
-              </button>
-
-              <button
-                class="btn btn-dark"
-                onclick="openAccountAction('withdraw')"
-              >
-                Withdraw
-              </button>
-
-              <button
-                class="btn btn-outline"
-                onclick="openAccountAction('transfer')"
-              >
-                Transfer
-              </button>
-
-              <button
-                class="btn btn-danger"
-                id="dashboardSignOutBtn"
-                onclick="handleSignOut()"
-              >
-                Sign Out
-              </button>
-
-            </div>
-
-
-            <div class="notice-bar">
-              Fund, Withdraw and Transfer actions below create
-              <strong>front-end requests only</strong>. They are stored in
-              your browser for your account and marked as pending until a
-              regulated banking / custody backend is connected. No deposits
-              are accepted, no withdrawals are processed and no money is
-              moved.
-            </div>
-
-
-            <div class="sub-heading">Portfolio</div>
-
-            <div class="portfolio-split">
-
-              <div class="portfolio-item">
-                <span>Traditional IRA</span>
-                <strong id="dashIRA">$0.00</strong>
-              </div>
-
-              <div class="portfolio-item">
-                <span>Digital Assets</span>
-                <strong id="dashCrypto">$0.00</strong>
-              </div>
-
-            </div>
-
-
+            <!-- shared: recent activity -->
             <div class="sub-heading">Recent activity</div>
 
             <div class="activity" id="txActivity">
@@ -1539,6 +1705,7 @@
             </div>
 
 
+            <!-- shared: profile -->
             <div class="sub-heading">Profile and account details</div>
 
             <div class="profile-grid">
@@ -1573,7 +1740,7 @@
     </section>
 
 
-    <!-- DIGITAL ASSETS -->
+        <!-- DIGITAL ASSETS -->
     <section id="digital-assets" class="crypto">
 
       <div class="container">
@@ -2240,6 +2407,97 @@
   </p>
 
   <p id="btcCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+</div>
+
+<!-- ETHEREUM WALLET DISPLAY (hidden until Ethereum is chosen) -->
+<div class="field hidden" id="ethWalletWrap">
+  <label>Ethereum Deposit Address (ERC-20)</label>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input
+      class="form-control"
+      type="text"
+      id="ethWalletAddress"
+      value="0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+      readonly
+      onclick="this.select()"
+      style="font-family:monospace;font-size:12px;"
+    >
+    <button
+      type="button"
+      class="btn btn-outline"
+      onclick="copyEthAddress()"
+      style="white-space:nowrap;"
+    >
+      Copy
+    </button>
+  </div>
+
+  <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
+    ⚠️ Send <strong>only Ethereum (ETH)</strong> or supported ERC-20
+    assets to this address on the Ethereum network. Sending any other
+    asset or using the wrong network will result in permanent loss of
+    funds.
+  </p>
+
+  <p id="ethCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+</div>
+
+<!-- USDC WALLET DISPLAY (hidden until USDC is chosen) -->
+<div class="field hidden" id="usdcWalletWrap">
+  <label>USDC Deposit Address (ERC-20)</label>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input
+      class="form-control"
+      type="text"
+      id="usdcWalletAddress"
+      value="0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+      readonly
+      onclick="this.select()"
+      style="font-family:monospace;font-size:12px;"
+    >
+    <button
+      type="button"
+      class="btn btn-outline"
+      onclick="copyUsdcAddress()"
+      style="white-space:nowrap;"
+    >
+      Copy
+    </button>
+  </div>
+
+  <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
+    ⚠️ Send <strong>only USDC on the Ethereum (ERC-20) network</strong>
+    to this address. Sending any other asset or using the wrong network
+    will result in permanent loss of funds.
+  </p>
+
+  <p id="usdcCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+</div>
+
+<!-- ONLINE BANKING: SUPPORT-DIRECTED FUNDING -->
+<div class="field hidden" id="fundSupportWrap">
+
+  <div class="notice-bar" style="margin-bottom:14px;">
+    Online Banking deposits are processed by our support team. Contact
+    support with your account email and the amount you wish to deposit,
+    and you will receive verified funding instructions for your account.
+  </div>
+
+  <a
+    class="btn btn-primary"
+    style="width:100%;"
+    href="mailto:support@altmanrowecapital.com?subject=Online%20Banking%20Deposit%20Request&body=Hello%20Support%2C%0A%0AI%20would%20like%20to%20fund%20my%20Online%20Banking%20account.%0A%0AAccount%20email%3A%20%0AAmount%3A%20%0A%0AThank%20you."
+  >
+    Contact Support to Fund Account
+  </a>
+
+  <p style="font-size:11px;color:#64748b;margin-top:10px;line-height:1.5;">
+    Never send funds to any address or account details not provided
+    directly by our official support team.
+  </p>
+
 </div>
 
         <div class="field hidden" id="actionFromWrap">
@@ -3175,6 +3433,93 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
+    /* ------------------------------
+       ACCOUNT TYPE HELPERS
+    ------------------------------ */
+
+    function getAccountType(user) {
+      const meta = (user && user.user_metadata) || {};
+      return meta.account_type === "Crypto Account"
+        ? "Crypto Account"
+        : "Online Banking";
+    }
+
+
+    function isCryptoUser(user) {
+      return getAccountType(user) === "Crypto Account";
+    }
+
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+
+
+    /* ------------------------------
+       LIVE TRADING SIGNALS
+       (illustrative, front-end only)
+    ------------------------------ */
+
+    const SIGNAL_ASSETS = [
+      { symbol: "BTC", name: "Bitcoin",  base: 67420 },
+      { symbol: "ETH", name: "Ethereum", base: 3842.5 },
+      { symbol: "SOL", name: "Solana",   base: 158.3 }
+    ];
+
+
+    function renderTradingSignals() {
+
+      const listEl = document.getElementById("signalsList");
+
+      if (!listEl) return;
+
+
+      listEl.innerHTML = SIGNAL_ASSETS.map(function(asset) {
+
+        const direction = Math.random() > 0.45 ? "LONG" : "SHORT";
+
+        const entry = asset.base * (1 + (Math.random() - 0.5) * 0.01);
+
+        const tp =
+          direction === "LONG"
+            ? entry * 1.04
+            : entry * 0.96;
+
+        const sl =
+          direction === "LONG"
+            ? entry * 0.975
+            : entry * 1.025;
+
+
+        return (
+          '<div class="signals-row">' +
+            "<div>" +
+              "<strong>" + asset.symbol + "</strong> " +
+              '<span style="color:#64748b;font-size:11px;">' +
+                asset.name +
+              "</span>" +
+            "</div>" +
+            '<span class="' +
+              (direction === "LONG" ? "signal-long" : "signal-short") +
+            '">' + direction + "</span>" +
+            "<span>$" +
+              entry.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+            "</span>" +
+            "<span>$" +
+              tp.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+            "</span>" +
+            "<span>$" +
+              sl.toLocaleString("en-US", { maximumFractionDigits: 2 }) +
+            "</span>" +
+          "</div>"
+        );
+
+      }).join("");
+
+    }
+
+
     function renderDashboard(user) {
 
       currentUser = user;
@@ -3198,17 +3543,57 @@ const { data, error } = await supabaseClient.auth.signUp({
       document.getElementById("dashEmail").textContent =
         user.email || "";
 
-      document.getElementById("dashAvailable").textContent =
-        formatUSD(state.availableBalance);
+      document.getElementById("dashTypeChip").textContent =
+        "Account Type: " + getAccountType(user);
 
-      document.getElementById("dashTotal").textContent =
-        formatUSD(state.totalPortfolio);
 
-      document.getElementById("dashIRA").textContent =
-        formatUSD(state.ira);
+      // Branch the dashboard by the registered account type.
+      // Each user only ever sees the experience they registered for.
+      const crypto = isCryptoUser(user);
 
-      document.getElementById("dashCrypto").textContent =
-        formatUSD(state.digitalAssets);
+      document.getElementById("cryptoView").classList.toggle("hidden", !crypto);
+      document.getElementById("bankingView").classList.toggle("hidden", crypto);
+
+
+      if (crypto) {
+
+        // Crypto account: everything starts at zero until funded
+        document.getElementById("dashAvailable").textContent =
+          formatUSD(state.availableBalance);
+
+        document.getElementById("dashTotal").textContent =
+          formatUSD(state.digitalAssets);
+
+        document.getElementById("dashChange").textContent = "+0.00%";
+
+        document.getElementById("dashCryptoHoldings").textContent =
+          formatUSD(state.digitalAssets);
+
+        document.getElementById("dashOpenPositions").textContent =
+          String(
+            state.transactions.filter(function(t) {
+              return t.type === "fund" || t.type === "withdraw";
+            }).length
+          );
+
+        renderTradingSignals();
+
+      } else {
+
+        // Online Banking account: zero balance until funded via support
+        document.getElementById("bankAvailable").textContent =
+          formatUSD(state.availableBalance);
+
+        document.getElementById("bankTotal").textContent =
+          formatUSD(state.totalPortfolio);
+
+        document.getElementById("bankChecking").textContent =
+          formatUSD(state.ira);
+
+        document.getElementById("bankSavings").textContent =
+          formatUSD(state.digitalAssets);
+
+      }
 
 
       const emailVerified = !!user.email_confirmed_at;
@@ -3241,7 +3626,7 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
-    function renderTransactions(state) {
+        function renderTransactions(state) {
 
       const txList = document.getElementById("txList");
 
@@ -3358,97 +3743,179 @@ const { data, error } = await supabaseClient.auth.signUp({
 
     function openAccountAction(type) {
 
-  const titles = {
-    fund: ["Fund Account", "Queue a deposit request."],
-    withdraw: ["Withdraw", "Queue a withdrawal request."],
-    transfer: ["Transfer", "Queue an internal transfer request."]
-  };
+      const titles = {
+        fund: ["Fund Account", "Queue a deposit request."],
+        withdraw: ["Withdraw", "Queue a withdrawal request."],
+        transfer: ["Transfer", "Queue an internal transfer request."]
+      };
 
-  document.getElementById("actionType").value = type;
-  document.getElementById("actionTitle").textContent = titles[type][0];
-  document.getElementById("actionSubtitle").textContent = titles[type][1];
+      const crypto = currentUser && isCryptoUser(currentUser);
 
-  document.getElementById("actionMethodWrap").classList.toggle(
-    "hidden", type === "transfer"
-  );
+      document.getElementById("actionType").value = type;
+      document.getElementById("actionTitle").textContent = titles[type][0];
+      document.getElementById("actionSubtitle").textContent = titles[type][1];
 
-  document.getElementById("actionFromWrap").classList.toggle(
-    "hidden", type !== "transfer"
-  );
+      document.getElementById("actionMethodWrap").classList.toggle(
+        "hidden", type === "transfer"
+      );
 
-  document.getElementById("actionToWrap").classList.toggle(
-    "hidden", type !== "transfer"
-  );
+      document.getElementById("actionFromWrap").classList.toggle(
+        "hidden", type !== "transfer"
+      );
 
-  document.getElementById("actionForm").reset();
-  document.getElementById("actionMsg").textContent = "";
+      document.getElementById("actionToWrap").classList.toggle(
+        "hidden", type !== "transfer"
+      );
 
-  const meta = (currentUser && currentUser.user_metadata) || {};
-  const accountType = meta.account_type || "Online Banking";
-  const isCrypto = accountType === "Crypto Account";
 
-  const methodSelect = document.getElementById("actionMethod");
+      // Online Banking funding is support-directed: hide the form and
+      // show the "contact support" panel instead.
+      const supportOnly = (type === "fund" && !crypto);
 
-  if (isCrypto) {
-    methodSelect.innerHTML =
-      "<option>Bitcoin (BTC)</option>" +
-      "<option>Ethereum (ETH)</option>" +
-      "<option>USDC (ERC-20)</option>" +
-      "<option>Bank transfer (ACH)</option>" +
-      "<option>Wire transfer</option>";
-  } else {
-    methodSelect.innerHTML =
-      "<option>Bank transfer (ACH)</option>" +
-      "<option>Wire transfer</option>" +
-      "<option>Debit card</option>";
-  }
+      document.getElementById("fundSupportWrap").classList.toggle(
+        "hidden", !supportOnly
+      );
 
-  const btcWrap = document.getElementById("btcWalletWrap");
-  if (btcWrap) btcWrap.classList.add("hidden");
+      document.getElementById("actionAmount").closest(".field")
+        .classList.toggle("hidden", supportOnly);
 
-  const copyMsg = document.getElementById("btcCopyMsg");
-  if (copyMsg) copyMsg.textContent = "";
+      document.getElementById("actionSubmit").classList.toggle(
+        "hidden", supportOnly
+      );
 
-  openModal("actionModal");
 
-  if (type === "fund") handleFundMethodChange();
-}
-function handleFundMethodChange() {
+      document.getElementById("actionForm").reset();
+      document.getElementById("actionMsg").textContent = "";
 
-  const method = document.getElementById("actionMethod").value;
-  const btcWrap = document.getElementById("btcWalletWrap");
 
-  if (!btcWrap) return;
+      const methodSelect = document.getElementById("actionMethod");
 
-  const isBitcoin = method === "Bitcoin (BTC)";
 
-  btcWrap.classList.toggle("hidden", !isBitcoin);
-}
+      if (crypto) {
 
-function copyBtcAddress() {
+        // Crypto account: fund and withdraw via cryptocurrencies + wire
+        methodSelect.innerHTML =
+          "<option>Bitcoin (BTC)</option>" +
+          "<option>Ethereum (ETH)</option>" +
+          "<option>USDC (ERC-20)</option>" +
+          "<option>Wire transfer</option>";
 
-  const input = document.getElementById("btcWalletAddress");
-  const msg = document.getElementById("btcCopyMsg");
+      } else {
 
-  input.select();
-  input.setSelectionRange(0, 99999);
+        if (type === "fund") {
 
-  navigator.clipboard.writeText(input.value)
-    .then(function () {
-      msg.textContent = "✓ Address copied to clipboard";
-      msg.style.color = "#15803d";
-    })
-    .catch(function () {
-      // Fallback for older browsers
-      document.execCommand("copy");
-      msg.textContent = "✓ Address copied";
-      msg.style.color = "#15803d";
-    });
+          methodSelect.innerHTML =
+            "<option>Contact support for deposit instructions</option>";
 
-  setTimeout(function () { msg.textContent = ""; }, 2500);
-}
+        } else {
 
-    function submitAccountAction(event) {
+          // Online Banking withdrawals
+          methodSelect.innerHTML =
+            "<option>Bank transfer (ACH)</option>" +
+            "<option>Wire transfer</option>" +
+            "<option>Debit card</option>";
+
+        }
+
+      }
+
+
+      ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
+
+        const wrap = document.getElementById(id);
+        if (wrap) wrap.classList.add("hidden");
+
+      });
+
+      ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
+
+        const msg = document.getElementById(id);
+        if (msg) msg.textContent = "";
+
+      });
+
+
+      openModal("actionModal");
+
+      if (type === "fund" && crypto) handleFundMethodChange();
+
+    }
+
+
+    function openBankingFund() {
+
+      // Online Banking funding routes the user to support
+      openAccountAction("fund");
+
+    }
+
+
+    
+    function handleFundMethodChange() {
+
+      const method = document.getElementById("actionMethod").value;
+
+      const map = {
+        "Bitcoin (BTC)": "btcWalletWrap",
+        "Ethereum (ETH)": "ethWalletWrap",
+        "USDC (ERC-20)": "usdcWalletWrap"
+      };
+
+      ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
+
+        const wrap = document.getElementById(id);
+        if (wrap) wrap.classList.add("hidden");
+
+      });
+
+      const target = map[method];
+
+      if (target) {
+        document.getElementById(target).classList.remove("hidden");
+      }
+
+    }
+
+
+    function copyWalletAddress(inputId, msgId) {
+
+      const input = document.getElementById(inputId);
+      const msg = document.getElementById(msgId);
+
+      input.select();
+      input.setSelectionRange(0, 99999);
+
+      navigator.clipboard.writeText(input.value)
+        .then(function () {
+          msg.textContent = "✓ Address copied to clipboard";
+          msg.style.color = "#15803d";
+        })
+        .catch(function () {
+          document.execCommand("copy");
+          msg.textContent = "✓ Address copied";
+          msg.style.color = "#15803d";
+        });
+
+      setTimeout(function () { msg.textContent = ""; }, 2500);
+
+    }
+
+
+    function copyBtcAddress() {
+      copyWalletAddress("btcWalletAddress", "btcCopyMsg");
+    }
+
+
+    function copyEthAddress() {
+      copyWalletAddress("ethWalletAddress", "ethCopyMsg");
+    }
+
+
+    function copyUsdcAddress() {
+      copyWalletAddress("usdcWalletAddress", "usdcCopyMsg");
+    }
+
+        function submitAccountAction(event) {
 
       event.preventDefault();
 
@@ -3476,6 +3943,7 @@ function copyBtcAddress() {
 
 
       const state = loadAccountState(currentUser);
+      const crypto = isCryptoUser(currentUser);
 
       const now = new Date();
 
@@ -3492,18 +3960,33 @@ function copyBtcAddress() {
 
       if (type === "fund") {
 
+        if (!crypto) {
+
+          actionMsg.textContent =
+            "Online Banking deposits are handled by our support team. " +
+            "Please contact support@altmanrowecapital.com for verified " +
+            "funding instructions.";
+          actionMsg.style.color = "#b45309";
+          return;
+
+        }
+
         const method =
           document.getElementById("actionMethod").value;
 
         description = "Funding request — " + method;
         amountLabel = "+" + formatUSD(amount);
 
-        state.availableBalance += amount;
+        // Crypto funding credits the digital-assets balance
+        state.digitalAssets += amount;
         state.totalPortfolio += amount;
 
       } else if (type === "withdraw") {
 
-        if (amount > state.availableBalance) {
+        const source =
+          crypto ? state.digitalAssets : state.availableBalance;
+
+        if (amount > source) {
           actionMsg.textContent =
             "Amount exceeds your available balance.";
           actionMsg.style.color = "#b91c1c";
@@ -3516,7 +3999,12 @@ function copyBtcAddress() {
         description = "Withdrawal request — " + method;
         amountLabel = "-" + formatUSD(amount);
 
-        state.availableBalance -= amount;
+        if (crypto) {
+          state.digitalAssets -= amount;
+        } else {
+          state.availableBalance -= amount;
+        }
+
         state.totalPortfolio -= amount;
 
       } else {
@@ -3567,7 +4055,7 @@ function copyBtcAddress() {
     }
 
 
-    /* ------------------------------
+        /* ------------------------------
        SESSION CHECK ON PAGE LOAD
     ------------------------------ */
 
