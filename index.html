@@ -902,6 +902,215 @@
       display: none !important;
     }
 
+    /* AUTHENTICATED DASHBOARD */
+    .dash-user-head {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 22px;
+    }
+
+    .avatar {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--navy);
+      color: white;
+      font-weight: 800;
+      font-size: 19px;
+      flex-shrink: 0;
+    }
+
+    .dash-user-head h3 {
+      color: var(--navy);
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .dash-user-head p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .chip {
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .chip.neutral {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .chip.amber {
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    .dash-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .notice-bar {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-bottom: 22px;
+    }
+
+    .sub-heading {
+      color: var(--navy);
+      font-size: 16px;
+      font-weight: 800;
+      margin: 24px 0 12px;
+    }
+
+    .portfolio-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .portfolio-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .portfolio-item span {
+      color: var(--muted);
+      font-size: 13px;
+      display: block;
+    }
+
+    .portfolio-item strong {
+      display: block;
+      font-size: 24px;
+      color: var(--navy);
+      margin-top: 6px;
+    }
+
+    .pending {
+      color: #b45309 !important;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+
+    .profile-item {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 13px;
+    }
+
+    .profile-item span {
+      color: var(--muted);
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 4px;
+    }
+
+    .profile-item strong {
+      color: var(--navy);
+      word-break: break-all;
+    }
+
+    .signed-out-box {
+      text-align: center;
+      padding: 50px 20px;
+    }
+
+    .signed-out-box h3 {
+      color: var(--navy);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .signed-out-box p {
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 650px) {
+      .portfolio-split,
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ADMIN PANEL */
+    .admin-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .admin-table-head,
+    .admin-table-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 10px;
+      padding: 11px 14px;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .admin-table-head {
+      background: #f8fafc;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .admin-table-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .admin-id {
+      font-family: monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    @media (max-width: 650px) {
+      .admin-table-wrap {
+        overflow-x: auto;
+      }
+
+      .admin-table-head,
+      .admin-table-row {
+        min-width: 520px;
+      }
+    }
+
     /* MOBILE */
     @media (max-width: 900px) {
       .nav-links {
@@ -1029,6 +1238,10 @@
 
         <button class="btn btn-primary" id="headerCreateBtn" onclick="openModal('registerModal')">
           Create Account
+        </button>
+
+        <button class="btn btn-dark hidden" id="adminBtn" onclick="openAdminPanel()">
+          Admin
         </button>
 
         <button class="btn btn-outline hidden" id="headerSignOutBtn" onclick="handleSignOut()">
@@ -1175,85 +1388,181 @@
       <div class="container">
 
         <div class="section-heading">
-          <h2>Account dashboard</h2>
+          <h2>Your account</h2>
           <p>
-            A centralized view for balances, activity and digital assets.
+            A personalized account area that appears after you sign in with
+            your Supabase account.
           </p>
         </div>
 
-        <div class="dashboard">
+        <div class="dashboard" id="accountDashboard">
 
-          <div class="dashboard-header">
-            <div>
-              <h3 id="dashboardTitle">Welcome back</h3>
-              <p>Your account overview</p>
-            </div>
+
+          <!-- SIGNED-OUT VIEW -->
+          <div class="signed-out-box" id="signedOutView">
+
+            <h3>Sign in to view your account</h3>
+
+            <p>
+              Your balances, portfolio, activity and profile details appear
+              here after authentication.
+            </p>
 
             <button
-              class="btn btn-outline"
+              class="btn btn-primary"
               id="dashboardSignInBtn"
               onclick="openModal('loginModal')"
             >
               Sign In
             </button>
 
-            <button
-              class="btn btn-danger hidden"
-              id="dashboardSignOutBtn"
-              onclick="handleSignOut()"
-            >
-              Sign Out
-            </button>
-          </div>
-
-          <div class="balance-grid">
-
-            <div class="balance-card">
-              <span>Total balance</span>
-              <strong>$284,650.00</strong>
-            </div>
-
-            <div class="balance-card">
-              <span>Available balance</span>
-              <strong>$52,840.00</strong>
-            </div>
-
-            <div class="balance-card">
-              <span>Portfolio change</span>
-              <strong class="positive">+8.42%</strong>
-            </div>
-
           </div>
 
 
-          <div class="activity">
+          <!-- SIGNED-IN VIEW -->
+          <div id="signedInView" class="hidden">
 
-            <div class="activity-head">
-              <span>Activity</span>
-              <span>Date</span>
-              <span>Status</span>
-              <span>Amount</span>
+            <div class="dash-user-head">
+
+              <div class="avatar" id="dashAvatar">A</div>
+
+              <div>
+                <h3 id="dashName">Welcome back</h3>
+                <p id="dashEmail">you@example.com</p>
+              </div>
+
             </div>
 
-            <div class="activity-row">
-              <strong>Account deposit</strong>
-              <span>Oct 02, 2026</span>
-              <span class="positive">Completed</span>
-              <strong>+$5,000</strong>
+
+            <div class="chips">
+
+              <span class="chip" id="dashStatusChip">Account Status: Active</span>
+              <span class="chip neutral" id="dashEmailChip">Email: Verified</span>
+
             </div>
 
-            <div class="activity-row">
-              <strong>Digital asset allocation</strong>
-              <span>Sep 29, 2026</span>
-              <span class="positive">Completed</span>
-              <strong>$2,500</strong>
+
+            <div class="balance-grid">
+
+              <div class="balance-card">
+                <span>Available balance</span>
+                <strong id="dashAvailable">$0.00</strong>
+              </div>
+
+              <div class="balance-card">
+                <span>Total portfolio value</span>
+                <strong id="dashTotal">$0.00</strong>
+              </div>
+
+              <div class="balance-card">
+                <span>Portfolio change</span>
+                <strong class="positive">+8.42%</strong>
+              </div>
+
             </div>
 
-            <div class="activity-row">
-              <strong>Portfolio adjustment</strong>
-              <span>Sep 24, 2026</span>
-              <span>Processed</span>
-              <strong>$1,800</strong>
+
+            <div class="dash-actions">
+
+              <button
+                class="btn btn-primary"
+                onclick="openAccountAction('fund')"
+              >
+                Fund Account
+              </button>
+
+              <button
+                class="btn btn-dark"
+                onclick="openAccountAction('withdraw')"
+              >
+                Withdraw
+              </button>
+
+              <button
+                class="btn btn-outline"
+                onclick="openAccountAction('transfer')"
+              >
+                Transfer
+              </button>
+
+              <button
+                class="btn btn-danger"
+                id="dashboardSignOutBtn"
+                onclick="handleSignOut()"
+              >
+                Sign Out
+              </button>
+
+            </div>
+
+
+            <div class="notice-bar">
+              Fund, Withdraw and Transfer actions below create
+              <strong>front-end requests only</strong>. They are stored in
+              your browser for your account and marked as pending until a
+              regulated banking / custody backend is connected. No deposits
+              are accepted, no withdrawals are processed and no money is
+              moved.
+            </div>
+
+
+            <div class="sub-heading">Portfolio</div>
+
+            <div class="portfolio-split">
+
+              <div class="portfolio-item">
+                <span>Traditional IRA</span>
+                <strong id="dashIRA">$0.00</strong>
+              </div>
+
+              <div class="portfolio-item">
+                <span>Digital Assets</span>
+                <strong id="dashCrypto">$0.00</strong>
+              </div>
+
+            </div>
+
+
+            <div class="sub-heading">Recent activity</div>
+
+            <div class="activity" id="txActivity">
+
+              <div class="activity-head">
+                <span>Activity</span>
+                <span>Date</span>
+                <span>Status</span>
+                <span>Amount</span>
+              </div>
+
+              <div id="txList"></div>
+
+            </div>
+
+
+            <div class="sub-heading">Profile and account details</div>
+
+            <div class="profile-grid">
+
+              <div class="profile-item">
+                <span>Full name</span>
+                <strong id="profileName">—</strong>
+              </div>
+
+              <div class="profile-item">
+                <span>Email</span>
+                <strong id="profileEmail">—</strong>
+              </div>
+
+              <div class="profile-item">
+                <span>User ID</span>
+                <strong id="profileId">—</strong>
+              </div>
+
+              <div class="profile-item">
+                <span>Member since</span>
+                <strong id="profileSince">—</strong>
+              </div>
+
             </div>
 
           </div>
@@ -1866,6 +2175,159 @@
     </div>
 
   </footer>
+
+
+  <!-- ACCOUNT ACTION MODALS (front-end only) -->
+  <div class="modal" id="actionModal" onclick="closeModalOutside(event, 'actionModal')">
+
+    <div class="modal-box">
+
+      <button class="modal-close" onclick="closeModal('actionModal')" aria-label="Close">×</button>
+
+      <h2 id="actionTitle">Fund Account</h2>
+
+      <p id="actionSubtitle">Enter the details below.</p>
+
+      <form class="modal-form" id="actionForm" onsubmit="submitAccountAction(event)">
+
+        <input type="hidden" id="actionType" value="fund">
+
+        <div class="field">
+          <label for="actionAmount">Amount (USD)</label>
+          <input class="form-control" type="number" id="actionAmount" placeholder="0.00" min="0.01" step="any" required>
+        </div>
+
+        <div class="field" id="actionMethodWrap">
+          <label for="actionMethod">Method</label>
+          <select class="form-control" id="actionMethod">
+            <option>Bank transfer (ACH)</option>
+            <option>Wire transfer</option>
+            <option>Debit card</option>
+          </select>
+        </div>
+
+        <div class="field hidden" id="actionFromWrap">
+          <label for="actionFrom">From</label>
+          <select class="form-control" id="actionFrom">
+            <option>Available balance</option>
+            <option>Traditional IRA</option>
+            <option>Digital Assets</option>
+          </select>
+        </div>
+
+        <div class="field hidden" id="actionToWrap">
+          <label for="actionTo">To</label>
+          <select class="form-control" id="actionTo">
+            <option>Traditional IRA</option>
+            <option>Digital Assets</option>
+            <option>Available balance</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="actionSubmit">Submit Request</button>
+
+        <p id="actionMsg" class="form-message"></p>
+
+      </form>
+
+      <div class="disclosure">
+        This action creates a front-end request stored in your browser only.
+        It is not connected to a bank, payment processor or digital-asset
+        custody provider, and no funds are moved.
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ADMIN PANEL MODAL (front-end only) -->
+  <div class="modal" id="adminModal" onclick="closeModalOutside(event, 'adminModal')">
+
+    <div class="modal-box" style="width:min(620px,100%);">
+
+      <button class="modal-close" onclick="closeModal('adminModal')" aria-label="Close">×</button>
+
+      <h2>Admin Panel</h2>
+
+      <p>
+        Adjust fictional balances for any user with stored dashboard state
+        on this device.
+      </p>
+
+
+      <div class="admin-table-wrap">
+
+        <div class="admin-table-head">
+          <span>User ID</span>
+          <span>Available</span>
+          <span>Total</span>
+          <span>Tx Count</span>
+        </div>
+
+        <div id="adminUserList"></div>
+
+      </div>
+
+
+      <form class="modal-form" onsubmit="submitAdminAdjustment(event)">
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="adminUser">User</label>
+            <select class="form-control" id="adminUser" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="adminArea">Balance Area</label>
+            <select class="form-control" id="adminArea">
+              <option value="availableBalance">Available balance</option>
+              <option value="ira">Traditional IRA</option>
+              <option value="digitalAssets">Digital Assets</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="adminDirection">Action</label>
+            <select class="form-control" id="adminDirection">
+              <option value="add">Add funds</option>
+              <option value="remove">Remove funds</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="adminAmount">Amount (USD)</label>
+            <input class="form-control" type="number" id="adminAmount" placeholder="0.00" min="0.01" step="any" required>
+          </div>
+
+        </div>
+
+
+        <div class="field">
+          <label for="adminNote">Note (optional)</label>
+          <input class="form-control" type="text" id="adminNote" placeholder="e.g. Seed balance for demo">
+        </div>
+
+
+        <button type="submit" class="btn btn-dark" id="adminSubmit">Apply Adjustment</button>
+
+        <p id="adminMsg" class="form-message"></p>
+
+      </form>
+
+
+      <div class="disclosure">
+        Front-end administration only. Adjustments modify fictional sample
+        balances stored in this browser and are recorded in the selected
+        user's transaction history. This panel is not connected to a
+        database and is not a substitute for a real admin backend with
+        authentication and audit logging.
+      </div>
+
+    </div>
+
+  </div>
 
 
   <!-- LOGIN MODAL -->
@@ -2588,8 +3050,187 @@
 
 
     /* ------------------------------
-       AUTH UI STATE
+       AUTHENTICATED DASHBOARD
+       (front-end only, per Supabase user)
     ------------------------------ */
+
+    const DASHBOARD_STATE_KEY = "arc_dashboard_state_v1";
+
+    const DEFAULT_ACCOUNT = {
+      availableBalance: 52840.00,
+      totalPortfolio: 284650.00,
+      ira: 184650.00,
+      digitalAssets: 100000.00,
+      transactions: []
+    };
+
+    let currentUser = null;
+
+
+    function formatUSD(amount) {
+      return amount.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD"
+      });
+    }
+
+
+    function loadAccountState(user) {
+
+      let all = {};
+
+      try {
+        all = JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        all = {};
+      }
+
+      if (!all[user.id]) {
+        all[user.id] = JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+        saveAllAccountState(all);
+      }
+
+      return all[user.id];
+
+    }
+
+
+    function saveAllAccountState(all) {
+      try {
+        localStorage.setItem(
+          DASHBOARD_STATE_KEY,
+          JSON.stringify(all)
+        );
+      } catch (e) {
+        console.warn("Could not persist dashboard state.", e);
+      }
+    }
+
+
+    function saveAccountState(user, state) {
+
+      let all = {};
+
+      try {
+        all = JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        all = {};
+      }
+
+      all[user.id] = state;
+      saveAllAccountState(all);
+
+    }
+
+
+    function renderDashboard(user) {
+
+      currentUser = user;
+
+      const state = loadAccountState(user);
+
+      const meta = user.user_metadata || {};
+      const firstName = meta.first_name || "";
+      const lastName = meta.last_name || "";
+      const fullName = (firstName + " " + lastName).trim() || "Account Holder";
+
+      const initials =
+        (firstName.charAt(0) + lastName.charAt(0)).toUpperCase() || "A";
+
+
+      document.getElementById("dashAvatar").textContent = initials;
+
+      document.getElementById("dashName").textContent =
+        "Welcome back, " + (firstName || fullName);
+
+      document.getElementById("dashEmail").textContent =
+        user.email || "";
+
+      document.getElementById("dashAvailable").textContent =
+        formatUSD(state.availableBalance);
+
+      document.getElementById("dashTotal").textContent =
+        formatUSD(state.totalPortfolio);
+
+      document.getElementById("dashIRA").textContent =
+        formatUSD(state.ira);
+
+      document.getElementById("dashCrypto").textContent =
+        formatUSD(state.digitalAssets);
+
+
+      const emailVerified = !!user.email_confirmed_at;
+
+      document.getElementById("dashEmailChip").textContent =
+        emailVerified
+          ? "Email: Verified"
+          : "Email: Unverified — check inbox";
+
+      document.getElementById("dashEmailChip").className =
+        emailVerified ? "chip" : "chip amber";
+
+
+      document.getElementById("profileName").textContent = fullName;
+      document.getElementById("profileEmail").textContent = user.email || "—";
+      document.getElementById("profileId").textContent = user.id || "—";
+
+      document.getElementById("profileSince").textContent =
+        user.created_at
+          ? new Date(user.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+            })
+          : "—";
+
+
+      renderTransactions(state);
+
+    }
+
+
+    function renderTransactions(state) {
+
+      const txList = document.getElementById("txList");
+
+      if (!state.transactions.length) {
+
+        txList.innerHTML =
+          '<div class="activity-row">' +
+            "<strong>No live transactions</strong>" +
+            "<span>—</span>" +
+            '<span class="pending">No activity yet</span>' +
+            "<strong>—</strong>" +
+          "</div>";
+
+        return;
+
+      }
+
+
+      txList.innerHTML = state.transactions
+        .slice()
+        .reverse()
+        .map(function(tx) {
+
+          return (
+            '<div class="activity-row">' +
+              "<strong>" + tx.description + "</strong>" +
+              "<span>" + tx.date + "</span>" +
+              '<span class="pending">' + tx.status + "</span>" +
+              "<strong>" + tx.amountLabel + "</strong>" +
+            "</div>"
+          );
+
+        })
+        .join("");
+
+    }
+
 
     function updateAuthUI(user) {
 
@@ -2602,15 +3243,15 @@
       const headerSignOutBtn =
         document.getElementById("headerSignOutBtn");
 
-      const dashboardTitle =
-        document.getElementById("dashboardTitle");
+      const signedOutView =
+        document.getElementById("signedOutView");
 
-      const dashboardSignInBtn =
-        document.getElementById("dashboardSignInBtn");
+      const signedInView =
+        document.getElementById("signedInView");
 
-      const dashboardSignOutBtn =
-        document.getElementById("dashboardSignOutBtn");
 
+      const adminBtn =
+        document.getElementById("adminBtn");
 
       if (user) {
 
@@ -2618,17 +3259,16 @@
         headerCreateBtn.classList.add("hidden");
         headerSignOutBtn.classList.remove("hidden");
 
-        dashboardSignInBtn.classList.add("hidden");
-        dashboardSignOutBtn.classList.remove("hidden");
+        if (isAdmin(user)) {
+          adminBtn.classList.remove("hidden");
+        } else {
+          adminBtn.classList.add("hidden");
+        }
 
-        const firstName =
-          user.user_metadata &&
-          user.user_metadata.first_name;
+        signedOutView.classList.add("hidden");
+        signedInView.classList.remove("hidden");
 
-        dashboardTitle.textContent =
-          firstName
-            ? "Welcome back, " + firstName
-            : "Welcome back";
+        renderDashboard(user);
 
       } else {
 
@@ -2636,10 +3276,12 @@
         headerCreateBtn.classList.remove("hidden");
         headerSignOutBtn.classList.add("hidden");
 
-        dashboardSignInBtn.classList.remove("hidden");
-        dashboardSignOutBtn.classList.add("hidden");
+        signedOutView.classList.remove("hidden");
+        signedInView.classList.add("hidden");
 
-        dashboardTitle.textContent = "Welcome back";
+        adminBtn.classList.add("hidden");
+
+        currentUser = null;
 
       }
 
@@ -2657,6 +3299,162 @@
       document.getElementById("top").scrollIntoView({
         behavior: "smooth"
       });
+
+    }
+
+
+    /* ------------------------------
+       FUND / WITHDRAW / TRANSFER
+       (front-end requests only)
+    ------------------------------ */
+
+    function openAccountAction(type) {
+
+      const titles = {
+        fund: ["Fund Account", "Queue a deposit request."],
+        withdraw: ["Withdraw", "Queue a withdrawal request."],
+        transfer: ["Transfer", "Queue an internal transfer request."]
+      };
+
+      document.getElementById("actionType").value = type;
+      document.getElementById("actionTitle").textContent = titles[type][0];
+      document.getElementById("actionSubtitle").textContent = titles[type][1];
+
+      document.getElementById("actionMethodWrap").classList.toggle(
+        "hidden", type === "transfer"
+      );
+
+      document.getElementById("actionFromWrap").classList.toggle(
+        "hidden", type !== "transfer"
+      );
+
+      document.getElementById("actionToWrap").classList.toggle(
+        "hidden", type !== "transfer"
+      );
+
+      document.getElementById("actionForm").reset();
+      document.getElementById("actionMsg").textContent = "";
+
+      openModal("actionModal");
+
+    }
+
+
+    function submitAccountAction(event) {
+
+      event.preventDefault();
+
+      if (!currentUser) {
+        openModal("loginModal");
+        return;
+      }
+
+
+      const type =
+        document.getElementById("actionType").value;
+
+      const amount =
+        Number(document.getElementById("actionAmount").value);
+
+      const actionMsg =
+        document.getElementById("actionMsg");
+
+
+      if (!amount || amount <= 0) {
+        actionMsg.textContent = "Please enter a valid amount.";
+        actionMsg.style.color = "#b91c1c";
+        return;
+      }
+
+
+      const state = loadAccountState(currentUser);
+
+      const now = new Date();
+
+      const dateLabel = now.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit"
+      });
+
+
+      let description = "";
+      let amountLabel = "";
+
+
+      if (type === "fund") {
+
+        const method =
+          document.getElementById("actionMethod").value;
+
+        description = "Funding request — " + method;
+        amountLabel = "+" + formatUSD(amount);
+
+        state.availableBalance += amount;
+        state.totalPortfolio += amount;
+
+      } else if (type === "withdraw") {
+
+        if (amount > state.availableBalance) {
+          actionMsg.textContent =
+            "Amount exceeds your available balance.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+
+        const method =
+          document.getElementById("actionMethod").value;
+
+        description = "Withdrawal request — " + method;
+        amountLabel = "-" + formatUSD(amount);
+
+        state.availableBalance -= amount;
+        state.totalPortfolio -= amount;
+
+      } else {
+
+        const from =
+          document.getElementById("actionFrom").value;
+
+        const to =
+          document.getElementById("actionTo").value;
+
+        if (from === to) {
+          actionMsg.textContent =
+            "Source and destination must be different.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+
+        description = "Transfer — " + from + " → " + to;
+        amountLabel = formatUSD(amount);
+
+      }
+
+
+      state.transactions.push({
+
+        description: description,
+        date: dateLabel,
+        status: "Pending — awaiting backend",
+        amountLabel: amountLabel,
+        amount: amount,
+        type: type,
+        queuedAt: now.toISOString()
+
+      });
+
+
+      saveAccountState(currentUser, state);
+      renderDashboard(currentUser);
+
+      actionMsg.textContent =
+        "Request queued. It will remain pending until a regulated backend is connected.";
+      actionMsg.style.color = "#15803d";
+
+      setTimeout(function() {
+        closeModal("actionModal");
+      }, 1600);
 
     }
 
@@ -2680,6 +3478,225 @@
 
       }
     );
+
+
+    /* ------------------------------
+       ADMIN PANEL (front-end only)
+    ------------------------------ */
+
+    const ADMIN_EMAILS = [
+      "admin@altmanrowecapital.com"
+      // add more admin emails here, e.g. "you@example.com"
+    ];
+
+
+    function isAdmin(user) {
+      return (
+        !!user &&
+        !!user.email &&
+        ADMIN_EMAILS.includes(user.email.toLowerCase())
+      );
+    }
+
+
+    function readAllAccountStates() {
+
+      try {
+        return JSON.parse(
+          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+        );
+      } catch (e) {
+        return {};
+      }
+
+    }
+
+
+    function openAdminPanel() {
+
+      if (!currentUser || !isAdmin(currentUser)) {
+        alert("Admin access requires signing in with an authorized admin email.");
+        return;
+      }
+
+      renderAdminPanel();
+      openModal("adminModal");
+
+    }
+
+
+    function renderAdminPanel() {
+
+      const all = readAllAccountStates();
+      const userIds = Object.keys(all);
+
+      const listEl = document.getElementById("adminUserList");
+      const selectEl = document.getElementById("adminUser");
+
+      if (!userIds.length) {
+
+        listEl.innerHTML =
+          '<div class="admin-table-row">' +
+            '<span class="admin-id">No stored users on this device</span>' +
+            "<span>—</span><span>—</span><span>—</span>" +
+          "</div>";
+
+        selectEl.innerHTML =
+          '<option value="">No users available</option>';
+
+        return;
+
+      }
+
+
+      listEl.innerHTML = userIds.map(function(id) {
+
+        const s = all[id];
+
+        return (
+          '<div class="admin-table-row">' +
+            '<span class="admin-id">' + id + "</span>" +
+            "<span>" + formatUSD(s.availableBalance) + "</span>" +
+            "<span>" + formatUSD(s.totalPortfolio) + "</span>" +
+            "<span>" + s.transactions.length + "</span>" +
+          "</div>"
+        );
+
+      }).join("");
+
+
+      selectEl.innerHTML = userIds.map(function(id) {
+
+        return (
+          '<option value="' + id + '">' +
+            id.slice(0, 8) + "… (" + formatUSD(all[id].totalPortfolio) + ")" +
+          "</option>"
+        );
+
+      }).join("");
+
+    }
+
+
+    function submitAdminAdjustment(event) {
+
+      event.preventDefault();
+
+      const userId =
+        document.getElementById("adminUser").value;
+
+      const area =
+        document.getElementById("adminArea").value;
+
+      const direction =
+        document.getElementById("adminDirection").value;
+
+      const amount =
+        Number(document.getElementById("adminAmount").value);
+
+      const note =
+        document.getElementById("adminNote").value.trim();
+
+      const adminMsg =
+        document.getElementById("adminMsg");
+
+
+      if (!userId) {
+        adminMsg.textContent = "Please select a user.";
+        adminMsg.style.color = "#b91c1c";
+        return;
+      }
+
+      if (!amount || amount <= 0) {
+        adminMsg.textContent = "Please enter a valid amount.";
+        adminMsg.style.color = "#b91c1c";
+        return;
+      }
+
+
+      const all = readAllAccountStates();
+      const state = all[userId];
+
+      if (!state) {
+        adminMsg.textContent = "Selected user no longer has stored state.";
+        adminMsg.style.color = "#b91c1c";
+        return;
+      }
+
+
+      if (direction === "remove") {
+
+        if (amount > state[area]) {
+          adminMsg.textContent =
+            "Cannot remove more than the current " +
+            document.getElementById("adminArea").options[
+              document.getElementById("adminArea").selectedIndex
+            ].text.toLowerCase() + ".";
+          adminMsg.style.color = "#b91c1c";
+          return;
+        }
+
+        state[area] = Math.round((state[area] - amount) * 100) / 100;
+        state.totalPortfolio =
+          Math.round((state.totalPortfolio - amount) * 100) / 100;
+
+      } else {
+
+        state[area] = Math.round((state[area] + amount) * 100) / 100;
+        state.totalPortfolio =
+          Math.round((state.totalPortfolio + amount) * 100) / 100;
+
+      }
+
+
+      const now = new Date();
+
+      const areaLabel =
+        document.getElementById("adminArea").options[
+          document.getElementById("adminArea").selectedIndex
+        ].text;
+
+      state.transactions.push({
+
+        description:
+          "Admin adjustment — " + areaLabel +
+          (direction === "add" ? " (+" : " (−") +
+          formatUSD(amount) + ")" +
+          (note ? " — " + note : ""),
+
+        date: now.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit"
+        }),
+
+        status: "Admin adjustment (front-end)",
+        amountLabel: direction === "add"
+          ? "+" + formatUSD(amount)
+          : "-" + formatUSD(amount),
+
+        amount: amount,
+        type: "admin",
+        queuedAt: now.toISOString()
+
+      });
+
+
+      saveAllAccountState(all);
+
+      renderAdminPanel();
+
+      adminMsg.textContent =
+        "Adjustment applied to user " + userId.slice(0, 8) + "…";
+      adminMsg.style.color = "#15803d";
+
+
+      // if admin is viewing their own dashboard, refresh it live
+      if (currentUser && currentUser.id === userId) {
+        renderDashboard(currentUser);
+      }
+
+    }
 
 
     /* ------------------------------
