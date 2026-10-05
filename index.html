@@ -4305,103 +4305,103 @@ const { data, error } = await supabaseClient.auth.signUp({
 
     function openAccountAction(type) {
 
-      const titles = {
-        fund: ["Fund Account", "Queue a deposit request."],
-        withdraw: ["Withdraw", "Queue a withdrawal request."],
-        transfer: ["Transfer", "Queue an internal transfer request."]
-      };
+  const titles = {
+    fund: ["Fund Account", "Queue a deposit request."],
+    withdraw: ["Withdraw", "Queue a withdrawal request."],
+    transfer: ["Transfer", "Queue an internal transfer request."],
+    send: ["Send Money", "Queue a payment request."]
+  };
 
-      const crypto = currentUser && isCryptoUser(currentUser);
+  const crypto = currentUser && isCryptoUser(currentUser);
 
-      document.getElementById("actionType").value = type;
-      document.getElementById("actionTitle").textContent = titles[type][0];
-      document.getElementById("actionSubtitle").textContent = titles[type][1];
+  document.getElementById("actionType").value = type;
+  document.getElementById("actionTitle").textContent = titles[type][0];
+  document.getElementById("actionSubtitle").textContent = titles[type][1];
 
-      document.getElementById("actionMethodWrap").classList.toggle(
-        "hidden", type === "transfer"
-      );
+  // Method select — visible for everything EXCEPT transfers
+  document.getElementById("actionMethodWrap").classList.toggle(
+    "hidden", type === "transfer"
+  );
 
-      document.getElementById("actionFromWrap").classList.toggle(
-        "hidden", type !== "transfer"
-      );
+  document.getElementById("actionFromWrap").classList.toggle(
+    "hidden", type !== "transfer" && type !== "send"
+  );
 
-      document.getElementById("actionToWrap").classList.toggle(
-        "hidden", type !== "transfer"
-      );
-
-
-      // Online Banking funding is support-directed: hide the form and
-      // show the "contact support" panel instead.
-      const supportOnly = (type === "fund" && !crypto);
-
-      document.getElementById("fundSupportWrap").classList.toggle(
-        "hidden", !supportOnly
-      );
-
-      document.getElementById("actionAmount").closest(".field")
-        .classList.toggle("hidden", supportOnly);
-
-      document.getElementById("actionSubmit").classList.toggle(
-        "hidden", supportOnly
-      );
+  document.getElementById("actionToWrap").classList.toggle(
+    "hidden", type !== "transfer" && type !== "send"
+  );
 
 
-      document.getElementById("actionForm").reset();
-      document.getElementById("actionMsg").textContent = "";
+  // Online Banking funding is support-directed: hide the form and
+  // show the "contact support" panel instead.
+  const supportOnly = (type === "fund" && !crypto);
+
+  document.getElementById("fundSupportWrap").classList.toggle(
+    "hidden", !supportOnly
+  );
+
+  document.getElementById("actionAmount").closest(".field")
+    .classList.toggle("hidden", supportOnly);
+
+  document.getElementById("actionSubmit").classList.toggle(
+    "hidden", supportOnly
+  );
 
 
-      const methodSelect = document.getElementById("actionMethod");
+  document.getElementById("actionForm").reset();
+  document.getElementById("actionMsg").textContent = "";
 
 
-      if (crypto) {
-
-        // Crypto account: fund and withdraw via cryptocurrencies + wire
-        methodSelect.innerHTML =
-          "<option>Bitcoin (BTC)</option>" +
-          "<option>Ethereum (ETH)</option>" +
-          "<option>USDC (ERC-20)</option>" +
-          "<option>Wire transfer</option>";
-
-      } else {
-
-        if (type === "fund") {
-
-          methodSelect.innerHTML =
-            "<option>Contact support for deposit instructions</option>";
-
-        } else {
-
-          // Online Banking withdrawals
-          methodSelect.innerHTML =
-            "<option>Bank transfer (ACH)</option>" +
-            "<option>Wire transfer</option>" +
-            "<option>Debit card</option>";
-
-        }
-
-      }
+  const methodSelect = document.getElementById("actionMethod");
 
 
-      ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
+  if (crypto) {
 
-        const wrap = document.getElementById(id);
-        if (wrap) wrap.classList.add("hidden");
+    methodSelect.innerHTML =
+      "<option>Bitcoin (BTC)</option>" +
+      "<option>Ethereum (ETH)</option>" +
+      "<option>USDC (ERC-20)</option>" +
+      "<option>Wire transfer</option>";
 
-      });
+  } else {
 
-      ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
+    if (type === "fund") {
 
-        const msg = document.getElementById(id);
-        if (msg) msg.textContent = "";
+      methodSelect.innerHTML =
+        "<option>Contact support for deposit instructions</option>";
 
-      });
+    } else {
 
-
-      openModal("actionModal");
-
-      if (type === "fund" && crypto) handleFundMethodChange();
+      methodSelect.innerHTML =
+        "<option>Bank transfer (ACH)</option>" +
+        "<option>Wire transfer</option>" +
+        "<option>Debit card</option>";
 
     }
+
+  }
+
+
+  ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
+
+    const wrap = document.getElementById(id);
+    if (wrap) wrap.classList.add("hidden");
+
+  });
+
+  ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
+
+    const msg = document.getElementById(id);
+    if (msg) msg.textContent = "";
+
+  });
+
+
+  openModal("actionModal");
+
+  if (type === "fund" && crypto) handleFundMethodChange();
+
+}
 
 
     function openBankingFund() {
