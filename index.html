@@ -1258,6 +1258,306 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* ============ PRIVATE BANKING DASHBOARD (post-login only) ============ */
+    .private-dash {
+      position: fixed;
+      inset: 0;
+      z-index: 5000;
+      background: var(--light);
+      overflow-y: auto;
+      display: none;
+    }
+
+    .private-dash.show {
+      display: block;
+    }
+
+    body.private-mode {
+      overflow: hidden;
+    }
+
+    .pd-topnav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--navy);
+      color: white;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .pd-topnav-inner {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .pd-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pd-brand .brand-mark {
+      background: white;
+      color: var(--navy);
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+    }
+
+    .pd-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .pd-nav-links button {
+      border: 0;
+      background: transparent;
+      color: #b9c9dd;
+      padding: 9px 13px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: 0.15s ease;
+    }
+
+    .pd-nav-links button:hover,
+    .pd-nav-links button.active {
+      background: rgba(255,255,255,0.10);
+      color: white;
+    }
+
+    .pd-logout {
+      background: rgba(255,255,255,0.10) !important;
+      color: white !important;
+      border: 1px solid rgba(255,255,255,0.18) !important;
+    }
+
+    .pd-main {
+      padding: 34px 0 70px;
+    }
+
+    .pd-welcome h1 {
+      color: var(--navy);
+      font-size: clamp(26px, 3.4vw, 38px);
+      letter-spacing: -1px;
+      margin-bottom: 4px;
+    }
+
+    .pd-welcome p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 26px;
+    }
+
+    .pd-balance-strip {
+      background: linear-gradient(135deg, #0b1f3a, #123866);
+      color: white;
+      border-radius: 20px;
+      padding: 26px;
+      margin-bottom: 24px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .pd-balance-strip .pd-total {
+      grid-column: 1 / -1;
+      border-bottom: 1px solid rgba(255,255,255,0.14);
+      padding-bottom: 16px;
+      margin-bottom: 4px;
+    }
+
+    .pd-balance-strip span {
+      display: block;
+      color: #aebfd4;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .pd-balance-strip strong {
+      font-size: 21px;
+      letter-spacing: -0.5px;
+    }
+
+    .pd-total strong {
+      font-size: 38px;
+      letter-spacing: -1.5px;
+    }
+
+    .pd-account-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .pd-account-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 8px 30px rgba(11,31,58,0.05);
+    }
+
+    .pd-account-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .pd-account-card-head strong {
+      color: var(--navy);
+      font-size: 16px;
+    }
+
+    .pd-mask {
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 2px;
+    }
+
+    .pd-account-balance {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--navy);
+      letter-spacing: -1px;
+      margin-bottom: 16px;
+    }
+
+    .pd-account-card .btn {
+      padding: 9px 14px;
+      font-size: 13px;
+      margin-right: 8px;
+      margin-bottom: 6px;
+    }
+
+    .pd-section {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 8px 30px rgba(11,31,58,0.04);
+    }
+
+    .pd-section h2 {
+      color: var(--navy);
+      font-size: 19px;
+      margin-bottom: 16px;
+    }
+
+    .pd-quick-actions {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+
+    .pd-quick {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      border-radius: 14px;
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.15s ease;
+      font-weight: 700;
+      color: var(--navy);
+      font-size: 13px;
+    }
+
+    .pd-quick:hover {
+      border-color: var(--blue);
+      background: var(--blue-light);
+      transform: translateY(-2px);
+    }
+
+    .pd-quick .icon {
+      margin: 0 auto 10px;
+      width: 42px;
+      height: 42px;
+      font-size: 18px;
+    }
+
+    .pd-activity-head,
+    .pd-activity-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr;
+      gap: 12px;
+      padding: 12px 14px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .pd-activity-head {
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 10px;
+    }
+
+    .pd-activity-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .pd-extra-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+    }
+
+    .pd-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .pd-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 15px;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .pd-list-item span {
+      color: var(--muted);
+    }
+
+    .pd-hidden-section {
+      display: none;
+    }
+
+    .pd-guard-note {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .pd-balance-strip { grid-template-columns: repeat(2, 1fr); }
+      .pd-account-grid, .pd-extra-grid { grid-template-columns: 1fr; }
+      .pd-quick-actions { grid-template-columns: repeat(2, 1fr); }
+      .pd-nav-links { display: none; }
+    }
+
+    @media (max-width: 650px) {
+      .pd-activity-wrap { overflow-x: auto; }
+      .pd-activity-head, .pd-activity-row { min-width: 640px; }
+      .pd-balance-strip { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 
@@ -2246,6 +2546,291 @@
   </main>
 
 
+
+  <!-- ==========================================
+       PRIVATE ONLINE BANKING DASHBOARD
+       Only rendered after successful Supabase
+       authentication for Online Banking users.
+       Never visible on the public homepage.
+       ========================================== -->
+  <div class="private-dash" id="privateDashboard" aria-hidden="true">
+
+    <!-- TOP NAVIGATION -->
+    <div class="pd-topnav">
+      <div class="container pd-topnav-inner">
+
+        <div class="pd-brand">
+          <span class="brand-mark">A</span>
+          <span>Altman Rowe Capital</span>
+        </div>
+
+        <nav class="pd-nav-links" id="pdNavLinks">
+          <button class="active" onclick="pdNavTo('overview', this)">Dashboard</button>
+          <button onclick="pdNavTo('pdAccounts', this)">Accounts</button>
+          <button onclick="pdNavTo('pdTransfers', this)">Transfers</button>
+          <button onclick="openAccountAction('transfer')">Payments</button>
+          <button onclick="pdNavTo('pdActivitySection', this)">Activity</button>
+          <button onclick="pdNavTo('pdSupportSection', this)">Support</button>
+          <button onclick="pdNavTo('pdSettingsSection', this)">Profile / Settings</button>
+        </nav>
+
+        <button class="btn btn-outline pd-logout" onclick="handleSignOut()">
+          Secure Logout
+        </button>
+
+      </div>
+    </div>
+
+
+    <div class="container pd-main">
+
+      <!-- WELCOME -->
+      <div class="pd-welcome" id="pdOverview">
+        <h1 id="pdGreeting">Good morning</h1>
+        <p id="pdSubGreeting">Here's an overview of your accounts.</p>
+      </div>
+
+
+      <!-- TOTAL BALANCES -->
+      <div class="pd-balance-strip">
+
+        <div class="pd-total">
+          <span>Total available balance</span>
+          <strong id="pdTotalBalance">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Checking account</span>
+          <strong id="pdCheckingBal">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Savings account</span>
+          <strong id="pdSavingsBal">$0.00</strong>
+        </div>
+
+        <div>
+          <span>IRA / retirement</span>
+          <strong id="pdIraBal">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Digital assets</span>
+          <strong id="pdDigitalBal">$0.00</strong>
+        </div>
+
+      </div>
+
+
+      <!-- ACCOUNT CARDS -->
+      <div class="pd-account-grid" id="pdAccounts">
+
+        <div class="pd-account-card">
+          <div class="pd-account-card-head">
+            <strong>Altman Rowe Checking</strong>
+            <span class="pd-mask">****1234</span>
+          </div>
+
+          <div class="pd-account-balance" id="pdCheckingCardBal">$0.00</div>
+
+          <button class="btn btn-primary" onclick="openAccountAction('transfer')">Transfer</button>
+          <button class="btn btn-dark" onclick="openBankingFund()">Deposit</button>
+          <button class="btn btn-outline" onclick="openAccountAction('withdraw')">Withdraw</button>
+        </div>
+
+
+        <div class="pd-account-card">
+          <div class="pd-account-card-head">
+            <strong>Altman Rowe Savings</strong>
+            <span class="pd-mask">****5678</span>
+          </div>
+
+          <div class="pd-account-balance" id="pdSavingsCardBal">$0.00</div>
+
+          <button class="btn btn-primary" onclick="openAccountAction('transfer')">Transfer</button>
+          <button class="btn btn-dark" onclick="openBankingFund()">Deposit</button>
+          <button class="btn btn-outline" onclick="openAccountAction('withdraw')">Withdraw</button>
+        </div>
+
+
+        <div class="pd-account-card">
+          <div class="pd-account-card-head">
+            <strong>Altman Rowe IRA / Retirement</strong>
+            <span class="pd-mask">****9012</span>
+          </div>
+
+          <div class="pd-account-balance" id="pdIraCardBal">$0.00</div>
+
+          <button class="btn btn-primary" onclick="openAccountAction('transfer')">Transfer</button>
+          <button class="btn btn-outline" onclick="pdScrollTo('pdStatements')">Statements</button>
+        </div>
+
+
+        <div class="pd-account-card hidden" id="pdDigitalCard">
+          <div class="pd-account-card-head">
+            <strong>Altman Rowe Digital Assets</strong>
+            <span class="pd-mask">****CRYPTO</span>
+          </div>
+
+          <div class="pd-account-balance" id="pdDigitalCardBal">$0.00</div>
+
+          <button class="btn btn-primary" onclick="scrollToSection('digital-assets')">View Markets</button>
+          <button class="btn btn-outline" onclick="openAccountAction('transfer')">Transfer</button>
+        </div>
+
+      </div>
+
+
+      <!-- QUICK ACTIONS -->
+      <div class="pd-section" id="pdTransfers">
+        <h2>Quick actions</h2>
+
+        <div class="pd-quick-actions">
+          <button class="pd-quick" onclick="openAccountAction('transfer')">
+            <div class="icon">⇄</div>
+            Transfer Money
+          </button>
+
+          <button class="pd-quick" onclick="openBankingFund()">
+            <div class="icon">＋</div>
+            Deposit Funds
+          </button>
+
+          <button class="pd-quick" onclick="openAccountAction('withdraw')">
+            <div class="icon">−</div>
+            Withdraw
+          </button>
+
+          <button class="pd-quick" onclick="openAccountAction('transfer')">
+            <div class="icon">➤</div>
+            Send Money
+          </button>
+
+          <button class="pd-quick" onclick="pdScrollTo('pdStatements')">
+            <div class="icon">▤</div>
+            View Statements
+          </button>
+        </div>
+      </div>
+
+
+      <!-- RECENT ACTIVITY -->
+      <div class="pd-section" id="pdActivitySection">
+        <h2>Recent activity</h2>
+
+        <div class="pd-activity-wrap">
+          <div class="pd-activity-head">
+            <span>Activity</span>
+            <span>Type</span>
+            <span>Date</span>
+            <span>Amount</span>
+            <span>Running balance</span>
+          </div>
+          <div id="pdActivityList"></div>
+        </div>
+      </div>
+
+
+      <!-- ADDITIONAL SECTIONS -->
+      <div class="pd-extra-grid">
+
+        <div class="pd-section" id="pdSettingsSection">
+          <h2>Account details &amp; security settings</h2>
+
+          <div class="pd-list">
+            <div class="pd-list-item">
+              <strong>Full name</strong>
+              <span id="pdProfileName">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Email</strong>
+              <span id="pdProfileEmail">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Account number</strong>
+              <span>****1234</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Routing number</strong>
+              <span>****8765</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Two-factor authentication</strong>
+              <span id="pd2faStatus">Enabled</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Login alerts</strong>
+              <span>Enabled</span>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="pd-section">
+          <h2>Beneficiaries</h2>
+
+          <div class="pd-list" id="pdBeneficiaries">
+            <div class="pd-list-item">
+              <strong>No beneficiaries added</strong>
+              <span>Add a beneficiary from Profile / Settings</span>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="pd-section" id="pdStatements">
+          <h2>Statements &amp; documents</h2>
+
+          <div class="pd-list">
+            <div class="pd-list-item">
+              <strong>October 2026 statement</strong>
+              <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;">Download PDF</button>
+            </div>
+            <div class="pd-list-item">
+              <strong>September 2026 statement</strong>
+              <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;">Download PDF</button>
+            </div>
+            <div class="pd-list-item">
+              <strong>August 2026 statement</strong>
+              <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;">Download PDF</button>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="pd-section" id="pdSupportSection">
+          <h2>Contact support</h2>
+
+          <div class="pd-list">
+            <div class="pd-list-item">
+              <strong>Email</strong>
+              <a href="mailto:support@altmanrowecapital.com" style="color:var(--blue);">
+                support@altmanrowecapital.com
+              </a>
+            </div>
+            <div class="pd-list-item">
+              <strong>Live chat</strong>
+              <span>Available via the chat widget</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Phone</strong>
+              <span>1-800-ALT-ROWE (Mon–Fri, 8am–8pm ET)</span>
+            </div>
+          </div>
+
+          <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
+            Deposits to Online Banking accounts are processed by our
+            support team. Contact support with your account email and the
+            amount you wish to deposit to receive verified funding
+            instructions.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
 
@@ -3023,6 +3608,7 @@ enabled.
       loginMsg.style.color = "#15803d";
 
       updateAuthUI(data.user);
+      routeAfterAuth(data.user);
 
       closeModal("loginModal");
 
@@ -3702,6 +4288,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         await supabaseClient.auth.signOut();
       }
 
+      hidePrivateDashboard();
       updateAuthUI(null);
 
       document.getElementById("top").scrollIntoView({
@@ -4018,6 +4605,9 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       saveAccountState(currentUser, state);
       renderDashboard(currentUser);
+      if (document.getElementById("privateDashboard").classList.contains("show")) {
+        renderPrivateDashboard(currentUser);
+      }
 
       actionMsg.textContent =
         "Request queued. It will remain pending until a regulated backend is connected.";
@@ -4045,6 +4635,10 @@ const { data, error } = await supabaseClient.auth.signUp({
 
         if (data && data.session && data.session.user) {
           updateAuthUI(data.session.user);
+          routeAfterAuth(data.session.user);
+        } else {
+          // Not authenticated — block direct dashboard access.
+          guardPrivateDashboardAccess();
         }
 
       }
@@ -4265,10 +4859,216 @@ const { data, error } = await supabaseClient.auth.signUp({
       // if admin is viewing their own dashboard, refresh it live
       if (currentUser && currentUser.id === userId) {
         renderDashboard(currentUser);
+        if (document.getElementById("privateDashboard").classList.contains("show")) {
+          renderPrivateDashboard(currentUser);
+        }
       }
 
     }
 
+
+
+    /* ------------------------------
+       PRIVATE BANKING DASHBOARD
+       Auth-gated: only Online Banking
+       users who pass Supabase auth.
+    ------------------------------ */
+
+    function greetForHour() {
+      const h = new Date().getHours();
+      if (h < 12) return "Good morning";
+      if (h < 18) return "Good afternoon";
+      return "Good evening";
+    }
+
+
+    function pdScrollTo(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+
+
+    function pdNavTo(id, button) {
+      document
+        .querySelectorAll("#pdNavLinks button")
+        .forEach(function(b) { b.classList.remove("active"); });
+
+      if (button) button.classList.add("active");
+
+      if (id === "overview") {
+        document.getElementById("privateDashboard").scrollTo({
+          top: 0, behavior: "smooth"
+        });
+        return;
+      }
+
+      pdScrollTo(id);
+    }
+
+
+    function renderPrivateDashboard(user) {
+
+      const state = loadAccountState(user);
+      const meta = user.user_metadata || {};
+
+      const firstName = meta.first_name || "Customer";
+      const lastName = meta.last_name || "";
+
+      // Time-aware greeting
+      document.getElementById("pdGreeting").textContent =
+        greetForHour() + ", " + firstName;
+
+      document.getElementById("pdSubGreeting").textContent =
+        "Here's an overview of your Altman Rowe accounts.";
+
+      // Balances — split available balance across checking/savings
+      const checking = Math.round(state.availableBalance * 0.6 * 100) / 100;
+      const savings  = Math.round(state.availableBalance * 0.4 * 100) / 100;
+
+      const total = state.totalPortfolio;
+
+      document.getElementById("pdTotalBalance").textContent = formatUSD(total);
+      document.getElementById("pdCheckingBal").textContent  = formatUSD(checking);
+      document.getElementById("pdSavingsBal").textContent   = formatUSD(savings);
+      document.getElementById("pdIraBal").textContent       = formatUSD(state.ira);
+      document.getElementById("pdDigitalBal").textContent   = formatUSD(state.digitalAssets);
+
+      document.getElementById("pdCheckingCardBal").textContent = formatUSD(checking);
+      document.getElementById("pdSavingsCardBal").textContent  = formatUSD(savings);
+      document.getElementById("pdIraCardBal").textContent      = formatUSD(state.ira);
+      document.getElementById("pdDigitalCardBal").textContent  = formatUSD(state.digitalAssets);
+
+      // Digital assets card only shown if the account has a balance
+      document.getElementById("pdDigitalCard").classList.toggle(
+        "hidden", state.digitalAssets <= 0
+      );
+
+      // Profile details
+      document.getElementById("pdProfileName").textContent =
+        (firstName + " " + lastName).trim() || "Account Holder";
+
+      document.getElementById("pdProfileEmail").textContent =
+        user.email || "—";
+
+      document.getElementById("pd2faStatus").textContent =
+        user.email_confirmed_at ? "Enabled" : "Pending verification";
+
+      renderPrivateActivity(state, total);
+
+    }
+
+
+    function renderPrivateActivity(state, total) {
+
+      const listEl = document.getElementById("pdActivityList");
+
+      if (!state.transactions.length) {
+
+        listEl.innerHTML =
+          '<div class="pd-activity-row">' +
+            "<strong>No recent activity</strong>" +
+            "<span>—</span><span>—</span>" +
+            '<span class="pending">—</span>' +
+            "<strong>" + formatUSD(total) + "</strong>" +
+          "</div>";
+
+        return;
+
+      }
+
+
+      // Running balance: walk backwards from the current total
+      let running = total;
+
+      const rows = state.transactions
+        .slice()
+        .reverse()
+        .map(function(tx) {
+
+          const signed =
+            tx.amountLabel && tx.amountLabel.indexOf("-") === 0
+              ? -Math.abs(tx.amount || 0)
+              : Math.abs(tx.amount || 0);
+
+          const rowBalance = running;
+          running -= signed;
+
+          const typeLabel =
+            tx.type === "fund" ? "Deposit"
+            : tx.type === "withdraw" ? "Withdrawal"
+            : tx.type === "transfer" ? "Transfer"
+            : tx.type === "admin" ? "Adjustment"
+            : "Payment";
+
+          return (
+            '<div class="pd-activity-row">' +
+              "<strong>" + tx.description + "</strong>" +
+              "<span>" + typeLabel + "</span>" +
+              "<span>" + tx.date + "</span>" +
+              "<strong>" + tx.amountLabel + "</strong>" +
+              "<strong>" + formatUSD(rowBalance) + "</strong>" +
+            "</div>"
+          );
+
+        })
+        .join("");
+
+      listEl.innerHTML = rows;
+
+    }
+
+
+    function showPrivateDashboard(user) {
+
+      renderPrivateDashboard(user);
+
+      document.getElementById("privateDashboard").classList.add("show");
+      document.getElementById("privateDashboard").setAttribute("aria-hidden", "false");
+      document.body.classList.add("private-mode");
+
+      document.getElementById("privateDashboard").scrollTop = 0;
+
+    }
+
+
+    function hidePrivateDashboard() {
+
+      const pd = document.getElementById("privateDashboard");
+
+      pd.classList.remove("show");
+      pd.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("private-mode");
+
+    }
+
+
+    function routeAfterAuth(user) {
+
+      // Online Banking users get the private dashboard.
+      // Crypto users keep the public crypto dashboard flow.
+      if (user && !isCryptoUser(user)) {
+        showPrivateDashboard(user);
+      } else {
+        hidePrivateDashboard();
+      }
+
+    }
+
+
+    function guardPrivateDashboardAccess() {
+
+      const wantsDashboard =
+        location.hash === "#dashboard" ||
+        location.hash === "#private-dashboard" ||
+        /[?&]dashboard=true/.test(location.search);
+
+      if (wantsDashboard) {
+        // Not logged in — bounce back to the login screen
+        openModal("loginModal");
+        history.replaceState(null, "", location.pathname);
+      }
+
+    }
 
     /* ------------------------------
        ESCAPE KEY
