@@ -2701,10 +2701,10 @@
             Withdraw
           </button>
 
-          <button class="pd-quick" onclick="openAccountAction('transfer')">
-            <div class="icon">➤</div>
-            Send Money
-          </button>
+          <button class="pd-quick" onclick="openAccountAction('send')">
+  <div class="icon">➤</div>
+  Send Money
+</button>
 
           <button class="pd-quick" onclick="pdScrollTo('pdStatements')">
             <div class="icon">▤</div>
@@ -4571,23 +4571,24 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       } else {
 
-        const from =
-          document.getElementById("actionFrom").value;
+  const from =
+    document.getElementById("actionFrom").value;
 
-        const to =
-          document.getElementById("actionTo").value;
+  const to =
+    document.getElementById("actionTo").value;
 
-        if (from === to) {
-          actionMsg.textContent =
-            "Source and destination must be different.";
-          actionMsg.style.color = "#b91c1c";
-          return;
-        }
+  if (from === to) {
+    actionMsg.textContent =
+      "Source and destination must be different.";
+    actionMsg.style.color = "#b91c1c";
+    return;
+  }
 
-        description = "Transfer — " + from + " → " + to;
-        amountLabel = formatUSD(amount);
+  const typeLabel = type === "send" ? "Send Money" : "Transfer";
+  description = typeLabel + " — " + from + " → " + to;
+  amountLabel = formatUSD(amount);
 
-      }
+}
 
 
       state.transactions.push({
