@@ -3657,14 +3657,41 @@ enabled.
     }
 
 
-    function forgotPassword(event) {
-      event.preventDefault();
+    async function forgotPassword(event) {
+  event.preventDefault();
 
-      alert(
-        "Password recovery requires a secure authentication and account-management system to be connected."
-      );
-    }
+  const loginMsg = document.getElementById("loginMsg");
+  const email = document.getElementById("loginEmail").value.trim();
 
+  if (!supabaseClient) {
+    loginMsg.textContent = "Authentication service failed to load. Please refresh the page.";
+    loginMsg.style.color = "#b91c1c";
+    return;
+  }
+
+  if (!email) {
+    loginMsg.textContent = "Enter your email address above first, then click 'Forgot password?'.";
+    loginMsg.style.color = "#b91c1c";
+    return;
+  }
+
+  loginMsg.textContent = "Sending reset link...";
+  loginMsg.style.color = "#64748b";
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://altmanrowecapital.com/reset-password.html"
+  });
+
+  if (error) {
+    loginMsg.textContent = "Error: " + error.message;
+    loginMsg.style.color = "#b91c1c";
+    return;
+  }
+
+  loginMsg.textContent =
+    "If an account exists for " + email + ", a reset link has been sent. Check your inbox.";
+  loginMsg.style.color = "#15803d";
+}
 
     /* ------------------------------
        REGISTRATION
