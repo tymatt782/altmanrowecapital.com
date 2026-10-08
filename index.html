@@ -3945,24 +3945,22 @@ const { data, error } = await supabaseClient.auth.signUp({
     async function loadAccountState(user) {
 
   const { data, error } = await supabaseClient
-    .from("profiles")
-    .select("balance")
-    .eq("id", user.id)
+    .from("balances")
+    .select("available_balance, total_portfolio, ira, digital_assets")
+    .eq("user_id", user.id)
     .single();
 
   if (error) {
-    console.error("Could not load profile balance:", error);
+    console.error("Could not load balance from Supabase:", error);
 
     return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
   }
 
-  const balance = Number(data.balance) || 0;
-
   return {
-    availableBalance: balance,
-    totalPortfolio: balance,
-    ira: 0,
-    digitalAssets: 0,
+    availableBalance: Number(data.available_balance) || 0,
+    totalPortfolio:   Number(data.total_portfolio)   || 0,
+    ira:              Number(data.ira)               || 0,
+    digitalAssets:    Number(data.digital_assets)    || 0,
     transactions: []
   };
 
@@ -4123,9 +4121,9 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       if (crypto) {
 
-        // Crypto account: everything starts at zero until funded
+        // Crypto account: balances come from the digital_assets column
         document.getElementById("dashAvailable").textContent =
-          formatUSD(state.availableBalance);
+          formatUSD(state.digitalAssets);
 
         document.getElementById("dashTotal").textContent =
           formatUSD(state.digitalAssets);
@@ -4482,7 +4480,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       copyWalletAddress("usdcWalletAddress", "usdcCopyMsg");
     }
 
-        function submitAccountAction(event) {
+        async function submitAccountAction(event) {
 
       event.preventDefault();
 
@@ -4509,7 +4507,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       }
 
 
-      const state = loadAccountState(currentUser);
+      const state = await loadAccountState(currentUser);
       const crypto = isCryptoUser(currentUser);
 
       const now = new Date();
@@ -4912,9 +4910,9 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
-    function renderPrivateDashboard(user) {
+    async function renderPrivateDashboard(user) {
 
-      const state = loadAccountState(user);
+      const state = await loadAccountState(user);
       const meta = user.user_metadata || {};
 
       const firstName = meta.first_name || "Customer";
