@@ -826,7 +826,7 @@
     .modal {
       position: fixed;
       inset: 0;
-      z-index: 3000;
+      z-index: 6000;
       display: none;
       align-items: center;
       justify-content: center;
@@ -3748,13 +3748,12 @@ const { data, error } = await supabaseClient.auth.signUp({
 });
       if (!error && data && data.user) {
         try {
-          await supabaseClient.from("balances").insert({
-            user_id: data.user.id,
-            available_balance: 0,
-            total_portfolio: 0,
-            ira: 0,
-            digital_assets: 0
-          });
+          await supabaseClient
+            .from("profiles")
+            .upsert(
+              { id: data.user.id, balance: 0 },
+              { onConflict: "id" }
+            );
         } catch (e) {
           console.warn("Could not seed balance row.", e);
         }
@@ -4814,7 +4813,11 @@ const { data, error } = await supabaseClient.auth.signUp({
         }
 
         // Deduct from balance (Supabase + local mirror)
-        await adjustSupabaseBalance(-amount);
+        try {
+          await adjustSupabaseBalance(-amount);
+        } catch (e) {
+          console.warn("Supabase balance deduction failed:", e);
+        }
         state.digitalAssets -= amount;
         state.totalPortfolio -= amount;
 
@@ -4874,7 +4877,7 @@ const { data, error } = await supabaseClient.auth.signUp({
           return;
         }
 
-        const { data: req } = await supabaseClient
+        const { data: req, error: reqErr } = await supabaseClient
           .from("withdrawal_requests")
           .insert({
             user_id: currentUser.id,
@@ -4887,17 +4890,32 @@ const { data, error } = await supabaseClient.auth.signUp({
           .select()
           .single();
 
+        if (reqErr) {
+          actionMsg.textContent =
+            "Could not submit request: " + reqErr.message +
+            " — run the Supabase setup SQL (see setup guide).";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+
         // Generate one-time token (letters + numbers) → Supabase
         const token = generateToken();
-        await supabaseClient
-          .from("one_time_tokens")
-          .insert({
-            user_id: currentUser.id,
-            request_id: req ? req.id : null,
-            token: token,
-            purpose: type,
-            status: "active"
-          });
+        try {
+          const { error: tokenErr } = await supabaseClient
+            .from("one_time_tokens")
+            .insert({
+              user_id: currentUser.id,
+              request_id: req ? req.id : null,
+              token: token,
+              purpose: type,
+              status: "active"
+            });
+          if (tokenErr) {
+            console.warn("Token table insert failed:", tokenErr.message);
+          }
+        } catch (e) {
+          console.warn("Token table insert failed:", e);
+        }
 
         const typeLabel =
           type === "withdraw"
@@ -4953,7 +4971,11 @@ const { data, error } = await supabaseClient.auth.signUp({
         amountLabel = "+" + formatUSD(amount);
         state.digitalAssets += amount;
         state.totalPortfolio += amount;
-        await adjustSupabaseBalance(amount);
+        try {
+          await adjustSupabaseBalance(amount);
+        } catch (e) {
+          console.warn("Supabase balance update failed:", e);
+        }
       } else {
         const from =
           document.getElementById("actionFrom").value;
