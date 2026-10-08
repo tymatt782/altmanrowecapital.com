@@ -3942,24 +3942,29 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
-    function loadAccountState(user) {
+    async function loadAccountState(user) {
 
-      let all = {};
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("balance")
+    .eq("id", user.id)
+    .single();
 
-      try {
-        all = JSON.parse(
-          localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
-        );
-      } catch (e) {
-        all = {};
-      }
+  if (error) {
+    console.error("Could not load profile balance:", error);
 
-      if (!all[user.id]) {
-        all[user.id] = JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
-        saveAllAccountState(all);
-      }
+    return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+  }
 
-      return all[user.id];
+  const balance = Number(data.balance) || 0;
+
+  return {
+    availableBalance: balance,
+    totalPortfolio: balance,
+    ira: 0,
+    digitalAssets: 0,
+    transactions: []
+  };
 
     }
 
@@ -4081,11 +4086,11 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
-    function renderDashboard(user) {
+    async function renderDashboard(user) {
 
       currentUser = user;
 
-      const state = loadAccountState(user);
+      const state = await loadAccountState(user);
 
       const meta = user.user_metadata || {};
       const firstName = meta.first_name || "";
