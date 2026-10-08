@@ -3945,9 +3945,9 @@ const { data, error } = await supabaseClient.auth.signUp({
     async function loadAccountState(user) {
 
   const { data, error } = await supabaseClient
-    .from("balances")
-    .select("available_balance, total_portfolio, ira, digital_assets")
-    .eq("user_id", user.id)
+    .from("profiles")
+    .select("balance")
+    .eq("id", user.id)
     .single();
 
   if (error) {
@@ -3956,11 +3956,13 @@ const { data, error } = await supabaseClient.auth.signUp({
     return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
   }
 
+  const balance = Number(data.balance) || 0;
+
   return {
-    availableBalance: Number(data.available_balance) || 0,
-    totalPortfolio:   Number(data.total_portfolio)   || 0,
-    ira:              Number(data.ira)               || 0,
-    digitalAssets:    Number(data.digital_assets)    || 0,
+    availableBalance: balance,
+    totalPortfolio: balance,
+    ira: 0,
+    digitalAssets: balance,
     transactions: []
   };
 
@@ -4152,10 +4154,10 @@ const { data, error } = await supabaseClient.auth.signUp({
           formatUSD(state.totalPortfolio);
 
         document.getElementById("bankChecking").textContent =
-          formatUSD(state.ira);
+          formatUSD(state.availableBalance * 0.6);
 
         document.getElementById("bankSavings").textContent =
-          formatUSD(state.digitalAssets);
+          formatUSD(state.availableBalance * 0.4);
 
       }
 
