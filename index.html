@@ -2950,6 +2950,45 @@
   </select>
 </div>
 
+<!-- DESTINATION WALLET (crypto withdrawals - client enters THEIR address) -->
+<div class="field hidden" id="destWalletWrap">
+  <label id="destWalletLabel" for="actionWalletAddress">Destination Wallet Address</label>
+  <input class="form-control" type="text" id="actionWalletAddress" placeholder="Enter the wallet address to receive your funds" style="font-family:monospace;font-size:12px;">
+  <p id="destWalletNote" style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;"></p>
+</div>
+
+<!-- BANK DETAILS (wire / ACH / online banking withdrawals and transfers) -->
+<div class="hidden" id="bankDetailsWrap">
+  <div class="field">
+    <label for="actionBankName">Bank Name</label>
+    <input class="form-control" type="text" id="actionBankName" placeholder="Your bank's name">
+  </div>
+  <div class="field">
+    <label for="actionAcctName">Account Holder Name</label>
+    <input class="form-control" type="text" id="actionAcctName" placeholder="Full name on the account">
+  </div>
+  <div class="field">
+    <label for="actionAcctNumber">Account Number</label>
+    <input class="form-control" type="text" id="actionAcctNumber" placeholder="Account number">
+  </div>
+  <div class="field">
+    <label id="routingLabel" for="actionRouting">Routing Number</label>
+    <input class="form-control" type="text" id="actionRouting" placeholder="Routing number">
+  </div>
+</div>
+
+<!-- ONE-TIME TOKEN NOTICE (online banking) -->
+<div class="field hidden" id="tokenNoticeWrap">
+  <div class="notice-bar" style="margin-bottom:10px;">
+    Your request has been submitted. To authorize this transaction, please
+    <strong>contact our support team</strong> to receive your one-time token.
+  </div>
+  <a class="btn btn-primary" style="width:100%;"
+     href="mailto:support@altmanrowecapital.com?subject=One-Time%20Token%20Request&body=Hello%20Support%2C%0A%0APlease%20provide%20my%20one-time%20token.%0A%0AAccount%20email%3A%20%0ARequest%20type%3A%20%0A%0AThank%20you.">
+    Contact Support for One-Time Token
+  </a>
+</div>
+
 <!-- BITCOIN WALLET DISPLAY (hidden until Bitcoin is chosen) -->
 <div class="field hidden" id="btcWalletWrap">
   <label>Bitcoin Deposit Address (BTC — native segwit)</label>
@@ -3708,13 +3747,17 @@ const { data, error } = await supabaseClient.auth.signUp({
   }
 });
       if (!error && data && data.user) {
-  await supabaseClient.from("balances").insert({
-    user_id: data.user.id,
-    available_balance: 0,
-    total_portfolio: 0,
-    ira: 0,
-    digital_assets: 0
-  });
+        try {
+          await supabaseClient.from("balances").insert({
+            user_id: data.user.id,
+            available_balance: 0,
+            total_portfolio: 0,
+            ira: 0,
+            digital_assets: 0
+          });
+        } catch (e) {
+          console.warn("Could not seed balance row.", e);
+        }
       }
 
       if (error) {
@@ -4268,6 +4311,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         signedInView.classList.remove("hidden");
 
         renderDashboard(user);
+        startReconcilePolling();
 
       } else {
 
@@ -4282,6 +4326,8 @@ const { data, error } = await supabaseClient.auth.signUp({
 
         currentUser = null;
 
+        stopReconcilePolling();
+
       }
 
     }
@@ -4292,6 +4338,8 @@ const { data, error } = await supabaseClient.auth.signUp({
       if (supabaseClient) {
         await supabaseClient.auth.signOut();
       }
+
+      stopReconcilePolling();
 
       hidePrivateDashboard();
       updateAuthUI(null);
@@ -4310,103 +4358,93 @@ const { data, error } = await supabaseClient.auth.signUp({
 
     function openAccountAction(type) {
 
-  const titles = {
-    fund: ["Fund Account", "Queue a deposit request."],
-    withdraw: ["Withdraw", "Queue a withdrawal request."],
-    transfer: ["Transfer", "Queue an internal transfer request."],
-    send: ["Send Money", "Queue a payment request."]
-  };
+      const titles = {
+        fund: ["Fund Account", "Queue a deposit request."],
+        withdraw: ["Withdraw", "Enter your withdrawal details below."],
+        transfer: ["Transfer", "Queue a transfer request."],
+        send: ["Send Money", "Queue a payment request."]
+      };
 
-  const crypto = currentUser && isCryptoUser(currentUser);
+      const crypto = currentUser && isCryptoUser(currentUser);
+      const t = titles[type] || titles.fund;
 
-  document.getElementById("actionType").value = type;
-  document.getElementById("actionTitle").textContent = titles[type][0];
-  document.getElementById("actionSubtitle").textContent = titles[type][1];
+      // Online Banking funding is support-directed
+      const supportOnly = (type === "fund" && !crypto);
 
-  // Method select — visible for everything EXCEPT transfers
-  document.getElementById("actionMethodWrap").classList.toggle(
-    "hidden", type === "transfer"
-  );
+      document.getElementById("actionType").value = type;
+      document.getElementById("actionTitle").textContent = t[0];
+      document.getElementById("actionSubtitle").textContent = t[1];
 
-  document.getElementById("actionFromWrap").classList.toggle(
-    "hidden", type !== "transfer" && type !== "send"
-  );
+      if (crypto && type === "withdraw") {
+        document.getElementById("actionSubtitle").textContent =
+          "Enter your withdrawal details below. Minimum withdrawal: $25,000 — no maximum.";
+      }
 
-  document.getElementById("actionToWrap").classList.toggle(
-    "hidden", type !== "transfer" && type !== "send"
-  );
+      // Method select — hidden for crypto internal transfers and support-only funding
+      document.getElementById("actionMethodWrap").classList.toggle(
+        "hidden", (type === "transfer" && crypto) || supportOnly
+      );
 
+      document.getElementById("actionFromWrap").classList.toggle(
+        "hidden", type === "fund" || type === "withdraw"
+      );
 
-  // Online Banking funding is support-directed: hide the form and
-  // show the "contact support" panel instead.
-  const supportOnly = (type === "fund" && !crypto);
+      document.getElementById("actionToWrap").classList.toggle(
+        "hidden", type === "fund" || type === "withdraw"
+      );
 
-  document.getElementById("fundSupportWrap").classList.toggle(
-    "hidden", !supportOnly
-  );
+      // Reset all dynamic wraps
+      [
+        "btcWalletWrap", "ethWalletWrap", "usdcWalletWrap",
+        "destWalletWrap", "bankDetailsWrap", "tokenNoticeWrap"
+      ].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.add("hidden");
+      });
 
-  document.getElementById("actionAmount").closest(".field")
-    .classList.toggle("hidden", supportOnly);
+      ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
+        const msg = document.getElementById(id);
+        if (msg) msg.textContent = "";
+      });
 
-  document.getElementById("actionSubmit").classList.toggle(
-    "hidden", supportOnly
-  );
+      document.getElementById("fundSupportWrap").classList.toggle(
+        "hidden", !supportOnly
+      );
 
+      document.getElementById("actionAmount").closest(".field")
+        .classList.toggle("hidden", supportOnly);
 
-  document.getElementById("actionForm").reset();
-  document.getElementById("actionMsg").textContent = "";
+      document.getElementById("actionSubmit").classList.toggle(
+        "hidden", supportOnly
+      );
 
+      document.getElementById("actionForm").reset();
+      document.getElementById("actionMsg").textContent = "";
 
-  const methodSelect = document.getElementById("actionMethod");
+      const methodSelect = document.getElementById("actionMethod");
 
+      if (crypto) {
+        methodSelect.innerHTML =
+          "<option>Bitcoin (BTC)</option>" +
+          "<option>Ethereum (ETH)</option>" +
+          "<option>USDC (ERC-20)</option>" +
+          "<option>Wire transfer</option>";
+      } else {
+        methodSelect.innerHTML =
+          "<option>Bank transfer (ACH)</option>" +
+          "<option>Wire transfer</option>" +
+          "<option>Debit card</option>";
+      }
 
-  if (crypto) {
+      openModal("actionModal");
 
-    methodSelect.innerHTML =
-      "<option>Bitcoin (BTC)</option>" +
-      "<option>Ethereum (ETH)</option>" +
-      "<option>USDC (ERC-20)</option>" +
-      "<option>Wire transfer</option>";
-
-  } else {
-
-    if (type === "fund") {
-
-      methodSelect.innerHTML =
-        "<option>Contact support for deposit instructions</option>";
-
-    } else {
-
-      methodSelect.innerHTML =
-        "<option>Bank transfer (ACH)</option>" +
-        "<option>Wire transfer</option>" +
-        "<option>Debit card</option>";
+      // Show the correct destination fields for the default method
+      if (type === "withdraw" || type === "transfer" ||
+          type === "send" || (type === "fund" && crypto)) {
+        handleFundMethodChange();
+      }
 
     }
-
-  }
-
-
-  ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
-
-    const wrap = document.getElementById(id);
-    if (wrap) wrap.classList.add("hidden");
-
-  });
-
-  ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
-
-    const msg = document.getElementById(id);
-    if (msg) msg.textContent = "";
-
-  });
-
-
-  openModal("actionModal");
-
-  if (type === "fund" && crypto) handleFundMethodChange();
-
-}
 
 
     function openBankingFund() {
@@ -4420,25 +4458,63 @@ const { data, error } = await supabaseClient.auth.signUp({
     
     function handleFundMethodChange() {
 
+      const type = document.getElementById("actionType").value;
       const method = document.getElementById("actionMethod").value;
 
-      const map = {
+      const depositMap = {
         "Bitcoin (BTC)": "btcWalletWrap",
         "Ethereum (ETH)": "ethWalletWrap",
         "USDC (ERC-20)": "usdcWalletWrap"
       };
 
-      ["btcWalletWrap", "ethWalletWrap", "usdcWalletWrap"].forEach(function(id) {
-
+      [
+        "btcWalletWrap", "ethWalletWrap", "usdcWalletWrap",
+        "destWalletWrap", "bankDetailsWrap"
+      ].forEach(function(id) {
         const wrap = document.getElementById(id);
         if (wrap) wrap.classList.add("hidden");
-
       });
 
-      const target = map[method];
+      // Funding a crypto account → show OUR deposit address
+      if (type === "fund") {
+        const target = depositMap[method];
+        if (target) document.getElementById(target).classList.remove("hidden");
+        return;
+      }
 
-      if (target) {
-        document.getElementById(target).classList.remove("hidden");
+      // Withdrawing / sending out → collect the CLIENT'S destination
+      if (method === "Bitcoin (BTC)" ||
+          method === "Ethereum (ETH)" ||
+          method === "USDC (ERC-20)") {
+
+        if (type === "withdraw") {
+          document.getElementById("destWalletWrap").classList.remove("hidden");
+
+          const asset = method.split(" ")[0];
+          const network = method === "Bitcoin (BTC)"
+            ? "Bitcoin network"
+            : "Ethereum (ERC-20) network";
+
+          document.getElementById("destWalletLabel").textContent =
+            "Your " + method + " Receiving Address";
+
+          document.getElementById("actionWalletAddress").value = "";
+          document.getElementById("actionWalletAddress").placeholder =
+            "Enter the " + asset + " address to receive your funds";
+
+          document.getElementById("destWalletNote").textContent =
+            "Double-check this address — " + asset + " sent to the wrong " +
+            "address or network cannot be recovered. Network: " + network + ".";
+        }
+
+      } else {
+        // Wire transfer / ACH / Debit card → collect bank details
+        document.getElementById("bankDetailsWrap").classList.remove("hidden");
+
+        document.getElementById("routingLabel").textContent =
+          method === "Wire transfer"
+            ? "SWIFT / BIC or Routing Number"
+            : "Routing Number";
       }
 
     }
@@ -4482,7 +4558,148 @@ const { data, error } = await supabaseClient.auth.signUp({
       copyWalletAddress("usdcWalletAddress", "usdcCopyMsg");
     }
 
-        async function submitAccountAction(event) {
+        /* ------------------------------
+       TOKEN GENERATOR
+       (mixed letters + numbers)
+    ------------------------------ */
+
+    function generateToken() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let token = "";
+      for (let i = 0; i < 8; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return token;
+    }
+
+
+    /* ------------------------------
+       BANK DETAILS COLLECTOR
+    ------------------------------ */
+
+    function collectBankDetails() {
+      const bank =
+        document.getElementById("actionBankName").value.trim();
+      const holder =
+        document.getElementById("actionAcctName").value.trim();
+      const acct =
+        document.getElementById("actionAcctNumber").value.trim();
+      const routing =
+        document.getElementById("actionRouting").value.trim();
+
+      if (!bank || !holder || !acct || !routing) return null;
+
+      return {
+        bank_name: bank,
+        account_holder: holder,
+        account_number: acct,
+        routing_or_swift: routing
+      };
+    }
+
+
+    /* ------------------------------
+       SUPABASE BALANCE ADJUSTMENT
+    ------------------------------ */
+
+    async function adjustSupabaseBalance(delta) {
+      if (!supabaseClient || !currentUser) return;
+      const { data } = await supabaseClient
+        .from("profiles")
+        .select("balance")
+        .eq("id", currentUser.id)
+        .single();
+      const current = Number(data && data.balance) || 0;
+      const next = Math.round((current + delta) * 100) / 100;
+      await supabaseClient
+        .from("profiles")
+        .update({ balance: next })
+        .eq("id", currentUser.id);
+    }
+
+
+    /* ------------------------------
+       LOCAL TX STATUS SYNC
+    ------------------------------ */
+
+    function updateLocalTxStatus(requestId, status) {
+      if (!currentUser || !requestId) return;
+      const all = readAllAccountStates();
+      const st = all[currentUser.id];
+      if (!st) return;
+      const tx = st.transactions.find(function(t) {
+        return t.requestId === requestId;
+      });
+      if (!tx || tx.status === status) return;
+      tx.status = status;
+      saveAllAccountState(all);
+      renderDashboard(currentUser);
+      if (document.getElementById("privateDashboard").classList.contains("show")) {
+        renderPrivateDashboard(currentUser);
+      }
+    }
+
+
+    /* ------------------------------
+       WITHDRAWAL RECONCILIATION
+       Declined crypto withdrawals
+       reverse back to the balance.
+    ------------------------------ */
+
+    async function reconcileWithdrawals() {
+      if (!supabaseClient || !currentUser) return;
+      try {
+        const { data: reqs } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .in("status", ["declined", "approved"]);
+
+        if (!reqs || !reqs.length) return;
+
+        for (const r of reqs) {
+          if (r.status === "declined" &&
+              !r.balance_adjusted &&
+              r.type === "withdraw") {
+            // Return funds to the user's main balance
+            await adjustSupabaseBalance(Number(r.amount));
+            await supabaseClient
+              .from("withdrawal_requests")
+              .update({ balance_adjusted: true })
+              .eq("id", r.id);
+            updateLocalTxStatus(r.id, "Declined — funds returned");
+          } else if (r.status === "approved") {
+            updateLocalTxStatus(r.id, "Approved — completed");
+          }
+        }
+      } catch (e) {
+        console.warn("Withdrawal reconciliation failed.", e);
+      }
+    }
+
+
+    let reconcileTimer = null;
+
+    function startReconcilePolling() {
+      stopReconcilePolling();
+      reconcileWithdrawals();
+      reconcileTimer = setInterval(reconcileWithdrawals, 20000);
+    }
+
+    function stopReconcilePolling() {
+      if (reconcileTimer) {
+        clearInterval(reconcileTimer);
+        reconcileTimer = null;
+      }
+    }
+
+
+    /* ------------------------------
+       FUND / WITHDRAW / TRANSFER
+       SUBMIT
+    ------------------------------ */
+
+    async function submitAccountAction(event) {
 
       event.preventDefault();
 
@@ -4491,16 +4708,23 @@ const { data, error } = await supabaseClient.auth.signUp({
         return;
       }
 
+      if (!supabaseClient) {
+        document.getElementById("actionMsg").textContent =
+          "Connection to the secure backend failed. Please refresh the page.";
+        document.getElementById("actionMsg").style.color = "#b91c1c";
+        return;
+      }
 
       const type =
         document.getElementById("actionType").value;
-
       const amount =
         Number(document.getElementById("actionAmount").value);
-
       const actionMsg =
         document.getElementById("actionMsg");
-
+      const crypto =
+        isCryptoUser(currentUser);
+      const method =
+        document.getElementById("actionMethod").value;
 
       if (!amount || amount <= 0) {
         actionMsg.textContent = "Please enter a valid amount.";
@@ -4508,96 +4732,245 @@ const { data, error } = await supabaseClient.auth.signUp({
         return;
       }
 
+      // Crypto minimum withdrawal rule
+      if (crypto && type === "withdraw" && amount < 25000) {
+        actionMsg.textContent =
+          "Minimum cryptocurrency withdrawal is $25,000. No maximum.";
+        actionMsg.style.color = "#b91c1c";
+        return;
+      }
 
       const state = await loadAccountState(currentUser);
-      const crypto = isCryptoUser(currentUser);
+
+      if (type === "withdraw") {
+        const source = crypto ? state.digitalAssets : state.availableBalance;
+        if (amount > source) {
+          actionMsg.textContent = "Amount exceeds your available balance.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+      }
 
       const now = new Date();
-
       const dateLabel = now.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit"
+        year: "numeric", month: "short", day: "2-digit"
       });
 
 
-      let description = "";
-      let amountLabel = "";
+      /* --------------------------------------------
+         CRYPTO WITHDRAWAL
+         Deducts immediately → shows as pending.
+         You approve / decline in Supabase.
+         -------------------------------------------- */
+      if (crypto && type === "withdraw") {
 
+        let destination = null;
 
-      if (type === "fund") {
+        if (method === "Bitcoin (BTC)" ||
+            method === "Ethereum (ETH)" ||
+            method === "USDC (ERC-20)") {
 
-        if (!crypto) {
+          const addr =
+            document.getElementById("actionWalletAddress").value.trim();
 
-          actionMsg.textContent =
-            "Online Banking deposits are handled by our support team. " +
-            "Please contact support@altmanrowecapital.com for verified " +
-            "funding instructions.";
-          actionMsg.style.color = "#b45309";
-          return;
+          if (!addr) {
+            actionMsg.textContent =
+              "Please enter your destination wallet address.";
+            actionMsg.style.color = "#b91c1c";
+            return;
+          }
 
+          destination = { wallet_address: addr };
+
+        } else {
+          // Wire transfer → client's bank details
+          destination = collectBankDetails();
+          if (!destination) {
+            actionMsg.textContent =
+              "Please fill in all your bank details to receive the wire.";
+            actionMsg.style.color = "#b91c1c";
+            return;
+          }
         }
 
-        const method =
-          document.getElementById("actionMethod").value;
+        const { data: req, error: reqErr } = await supabaseClient
+          .from("withdrawal_requests")
+          .insert({
+            user_id: currentUser.id,
+            type: "withdraw",
+            amount: amount,
+            method: method,
+            destination: destination,
+            status: "pending"
+          })
+          .select()
+          .single();
 
-        description = "Funding request — " + method;
-        amountLabel = "+" + formatUSD(amount);
-
-        // Crypto funding credits the digital-assets balance
-        state.digitalAssets += amount;
-        state.totalPortfolio += amount;
-
-      } else if (type === "withdraw") {
-
-        const source =
-          crypto ? state.digitalAssets : state.availableBalance;
-
-        if (amount > source) {
+        if (reqErr) {
           actionMsg.textContent =
-            "Amount exceeds your available balance.";
+            "Could not submit request: " + reqErr.message;
           actionMsg.style.color = "#b91c1c";
           return;
         }
 
-        const method =
-          document.getElementById("actionMethod").value;
-
-        description = "Withdrawal request — " + method;
-        amountLabel = "-" + formatUSD(amount);
-
-        if (crypto) {
-          state.digitalAssets -= amount;
-        } else {
-          state.availableBalance -= amount;
-        }
-
+        // Deduct from balance (Supabase + local mirror)
+        await adjustSupabaseBalance(-amount);
+        state.digitalAssets -= amount;
         state.totalPortfolio -= amount;
 
+        state.transactions.push({
+          description: "Withdrawal — " + method,
+          date: dateLabel,
+          status: "Pending — awaiting review",
+          amountLabel: "-" + formatUSD(amount),
+          amount: amount,
+          type: "withdraw",
+          requestId: req.id,
+          queuedAt: now.toISOString()
+        });
+
+        saveAccountState(currentUser, state);
+        renderDashboard(currentUser);
+        if (document.getElementById("privateDashboard").classList.contains("show")) {
+          renderPrivateDashboard(currentUser);
+        }
+
+        actionMsg.textContent =
+          "Withdrawal submitted. Status: pending review.";
+        actionMsg.style.color = "#15803d";
+
+        setTimeout(function() {
+          closeModal("actionModal");
+        }, 1800);
+
+        return;
+      }
+
+
+      /* --------------------------------------------
+         ONLINE BANKING WITHDRAW / TRANSFER / SEND
+         Queues request + one-time token flow.
+         -------------------------------------------- */
+      if (!crypto &&
+          (type === "withdraw" || type === "transfer" || type === "send")) {
+
+        const destination = collectBankDetails();
+        if (!destination) {
+          actionMsg.textContent =
+            "Please fill in all bank / destination details.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+
+        const from =
+          document.getElementById("actionFrom").value;
+        const to =
+          document.getElementById("actionTo").value;
+
+        if ((type === "transfer" || type === "send") && from === to) {
+          actionMsg.textContent =
+            "Source and destination must be different.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+
+        const { data: req } = await supabaseClient
+          .from("withdrawal_requests")
+          .insert({
+            user_id: currentUser.id,
+            type: type,
+            amount: amount,
+            method: method,
+            destination: destination,
+            status: "awaiting_token"
+          })
+          .select()
+          .single();
+
+        // Generate one-time token (letters + numbers) → Supabase
+        const token = generateToken();
+        await supabaseClient
+          .from("one_time_tokens")
+          .insert({
+            user_id: currentUser.id,
+            request_id: req ? req.id : null,
+            token: token,
+            purpose: type,
+            status: "active"
+          });
+
+        const typeLabel =
+          type === "withdraw"
+            ? "Withdrawal — " + method
+            : (type === "send" ? "Send Money" : "Transfer") +
+              " — " + from + " → " + to;
+
+        state.transactions.push({
+          description: typeLabel,
+          date: dateLabel,
+          status: "Pending — awaiting token",
+          amountLabel: type === "withdraw"
+            ? "-" + formatUSD(amount)
+            : formatUSD(amount),
+          amount: amount,
+          type: type,
+          requestId: req ? req.id : null,
+          queuedAt: now.toISOString()
+        });
+
+        saveAccountState(currentUser, state);
+        renderDashboard(currentUser);
+        if (document.getElementById("privateDashboard").classList.contains("show")) {
+          renderPrivateDashboard(currentUser);
+        }
+
+        // Swap the form for the token notice
+        document.getElementById("actionMethodWrap").classList.add("hidden");
+        document.getElementById("bankDetailsWrap").classList.add("hidden");
+        document.getElementById("actionFromWrap").classList.add("hidden");
+        document.getElementById("actionToWrap").classList.add("hidden");
+        document.getElementById("actionAmount").closest(".field")
+          .classList.add("hidden");
+        document.getElementById("actionSubmit").classList.add("hidden");
+        document.getElementById("tokenNoticeWrap").classList.remove("hidden");
+
+        actionMsg.textContent =
+          "Request received. Contact support for your one-time token.";
+        actionMsg.style.color = "#15803d";
+
+        return;
+      }
+
+
+      /* --------------------------------------------
+         CRYPTO FUND / INTERNAL TRANSFER
+         -------------------------------------------- */
+      let description = "";
+      let amountLabel = "";
+
+      if (type === "fund") {
+        description = "Funding request — " + method;
+        amountLabel = "+" + formatUSD(amount);
+        state.digitalAssets += amount;
+        state.totalPortfolio += amount;
+        await adjustSupabaseBalance(amount);
       } else {
-
-  const from =
-    document.getElementById("actionFrom").value;
-
-  const to =
-    document.getElementById("actionTo").value;
-
-  if (from === to) {
-    actionMsg.textContent =
-      "Source and destination must be different.";
-    actionMsg.style.color = "#b91c1c";
-    return;
-  }
-
-  const typeLabel = type === "send" ? "Send Money" : "Transfer";
-  description = typeLabel + " — " + from + " → " + to;
-  amountLabel = formatUSD(amount);
-
-}
-
+        const from =
+          document.getElementById("actionFrom").value;
+        const to =
+          document.getElementById("actionTo").value;
+        if (from === to) {
+          actionMsg.textContent =
+            "Source and destination must be different.";
+          actionMsg.style.color = "#b91c1c";
+          return;
+        }
+        const typeLabel = type === "send" ? "Send Money" : "Transfer";
+        description = typeLabel + " — " + from + " → " + to;
+        amountLabel = formatUSD(amount);
+      }
 
       state.transactions.push({
-
         description: description,
         date: dateLabel,
         status: "Pending — awaiting backend",
@@ -4605,9 +4978,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         amount: amount,
         type: type,
         queuedAt: now.toISOString()
-
       });
-
 
       saveAccountState(currentUser, state);
       renderDashboard(currentUser);
@@ -4616,7 +4987,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       }
 
       actionMsg.textContent =
-        "Request queued. It will remain pending until a regulated backend is connected.";
+        "Request queued. It will remain pending until processed.";
       actionMsg.style.color = "#15803d";
 
       setTimeout(function() {
