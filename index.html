@@ -2755,6 +2755,29 @@
       </div>
 
 
+      <!-- PENDING WITHDRAWALS (click a row to enter the one-time token) -->
+      <div class="pd-section" id="pdPendingSection">
+        <h2>Pending withdrawals</h2>
+
+        <div class="pd-activity-wrap">
+          <div class="pd-activity-head">
+            <span>Request</span>
+            <span>Date</span>
+            <span>Status</span>
+            <span>Amount</span>
+            <span>Action</span>
+          </div>
+          <div id="pdPendingList"></div>
+        </div>
+
+        <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;">
+          Click a pending withdrawal to enter the one-time token supplied by
+          support and begin processing. Funds remain on hold until the token
+          is verified and the request is reviewed.
+        </p>
+      </div>
+
+
       <!-- ADDITIONAL SECTIONS -->
       <div class="pd-extra-grid">
 
@@ -5544,6 +5567,59 @@ function openTokenModal(requestId) {
         user.email_confirmed_at ? "Enabled" : "Pending verification";
 
       renderPrivateActivity(state, total);
+      renderPrivatePending(state);
+
+    }
+
+
+    function renderPrivatePending(state) {
+
+      const listEl = document.getElementById("pdPendingList");
+      if (!listEl) return;
+
+      const pending = (state.transactions || []).filter(function(t) {
+        return t.pending === true;
+      });
+
+      if (!pending.length) {
+
+        listEl.innerHTML =
+          '<div class="pd-activity-row">' +
+            "<strong>No pending withdrawals</strong>" +
+            "<span>—</span>" +
+            '<span class="pending">—</span>' +
+            "<strong>—</strong>" +
+            "<span>—</span>" +
+          "</div>";
+
+        return;
+
+      }
+
+      listEl.innerHTML = pending
+        .slice()
+        .reverse()
+        .map(function(tx) {
+
+          const hasId = !!tx.requestId;
+          const clickAttr = hasId
+            ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
+            : "";
+
+          return (
+            '<div class="pd-activity-row"' + clickAttr + '>' +
+              "<strong>" + tx.description + "</strong>" +
+              "<span>" + tx.date + "</span>" +
+              '<span class="pending">' + tx.status + "</span>" +
+              "<strong>" + tx.amountLabel + "</strong>" +
+              (hasId
+                ? '<span style="color:var(--blue);font-weight:700;">Enter token \u2192</span>'
+                : "<span>—</span>") +
+            "</div>"
+          );
+
+        })
+        .join("");
 
     }
 
