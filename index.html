@@ -1941,6 +1941,13 @@
                 </button>
 
                 <button
+                  class="btn btn-outline"
+                  onclick="openBankCryptoTransfer()"
+                >
+                  Transfer to Crypto
+                </button>
+
+                <button
                   class="btn btn-danger"
                   onclick="handleSignOut()"
                 >
@@ -2977,16 +2984,30 @@
   </div>
 </div>
 
-<!-- ONE-TIME TOKEN NOTICE (online banking) -->
+<!-- ONE-TIME TOKEN NOTICE (shared banking and crypto withdrawal flow) -->
 <div class="field hidden" id="tokenNoticeWrap">
   <div class="notice-bar" style="margin-bottom:10px;">
-    Your request has been submitted. To authorize this transaction, please
-    <strong>contact our support team</strong> to receive your one-time token.
+    Your request is saved as <strong>pending</strong>. Contact support through
+    your verified support channel to request a one-time verification token.
+    Enter the token below for secure server-side verification. This does not
+    mean the withdrawal has been approved or paid.
   </div>
-  <a class="btn btn-primary" style="width:100%;"
-     href="mailto:support@altmanrowecapital.com?subject=One-Time%20Token%20Request&body=Hello%20Support%2C%0A%0APlease%20provide%20my%20one-time%20token.%0A%0AAccount%20email%3A%20%0ARequest%20type%3A%20%0A%0AThank%20you.">
+  <a class="btn btn-outline" style="width:100%;margin-bottom:12px;"
+     href="mailto:support@altmanrowecapital.com?subject=One-Time%20Token%20Request&body=Hello%20Support%2C%0A%0AI%20would%20like%20to%20request%20a%20one-time%20verification%20token%20for%20my%20pending%20transaction.%0A%0AAccount%20email%3A%20%0ARequest%20ID%3A%20%0A%0AThank%20you.">
     Contact Support for One-Time Token
   </a>
+  <label for="withdrawalToken">One-Time Verification Token</label>
+  <input class="form-control" type="text" id="withdrawalToken"
+         autocomplete="one-time-code" maxlength="32"
+         placeholder="Enter token supplied by support">
+  <button type="button" class="btn btn-primary" style="width:100%;margin-top:10px;"
+          id="verifyWithdrawalTokenBtn" onclick="verifyWithdrawalToken()">
+    Submit Token for Verification
+  </button>
+  <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
+    For security, this page never creates or approves tokens in the browser.
+    Verification must be performed by the configured secure backend.
+  </p>
 </div>
 
 <!-- BITCOIN WALLET DISPLAY (hidden until Bitcoin is chosen) -->
@@ -4445,6 +4466,8 @@ const { data, error } = await supabaseClient.auth.signUp({
       );
 
       document.getElementById("actionForm").reset();
+      pendingTokenRequestId = null;
+      document.getElementById("tokenNoticeWrap").classList.add("hidden");
       document.getElementById("actionMsg").textContent = "";
 
       const methodSelect = document.getElementById("actionMethod");
@@ -4455,11 +4478,17 @@ const { data, error } = await supabaseClient.auth.signUp({
           "<option>Ethereum (ETH)</option>" +
           "<option>USDC (ERC-20)</option>" +
           "<option>Wire transfer</option>";
-      } else {
+      } else if (type === "withdraw") {
         methodSelect.innerHTML =
           "<option>Bank transfer (ACH)</option>" +
           "<option>Wire transfer</option>" +
-          "<option>Debit card</option>";
+          "<option>Bitcoin (BTC)</option>" +
+          "<option>Ethereum (ETH)</option>" +
+          "<option>USDC (ERC-20)</option>";
+      } else {
+        methodSelect.innerHTML =
+          "<option>Bank transfer (ACH)</option>" +
+          "<option>Wire transfer</option>";
       }
 
       openModal("actionModal");
@@ -4470,6 +4499,18 @@ const { data, error } = await supabaseClient.auth.signUp({
         handleFundMethodChange();
       }
 
+    }
+
+
+    function openBankCryptoTransfer() {
+      openAccountAction("transfer");
+      document.getElementById("actionFrom").value = "Available balance";
+      document.getElementById("actionTo").value = "Digital Assets";
+      document.getElementById("actionMethodWrap").classList.add("hidden");
+      document.getElementById("bankDetailsWrap").classList.add("hidden");
+      document.getElementById("destWalletWrap").classList.add("hidden");
+      document.getElementById("actionSubtitle").textContent =
+        "Request an internal transfer from your online banking balance to your digital-assets account. The request remains pending until verified and reviewed.";
     }
 
 
@@ -4546,6 +4587,71 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
+    function showTokenVerificationStep() {
+      ["actionMethodWrap", "bankDetailsWrap", "destWalletWrap", "actionFromWrap", "actionToWrap"]
+        .forEach(function(id) {
+          const el = document.getElementById(id);
+          if (el) el.classList.add("hidden");
+        });
+      document.getElementById("actionAmount").closest(".field").classList.add("hidden");
+      document.getElementById("actionSubmit").classList.add("hidden");
+      document.getElementById("tokenNoticeWrap").classList.remove("hidden");
+      document.getElementById("withdrawalToken").value = "";
+      document.getElementById("verifyWithdrawalTokenBtn").disabled = false;
+    }
+
+    async function verifyWithdrawalToken() {
+      const msg = document.getElementById("actionMsg");
+      const token = document.getElementById("withdrawalToken").value.trim();
+      const button = document.getElementById("verifyWithdrawalTokenBtn");
+      if (!currentUser || !supabaseClient || !pendingTokenRequestId) {
+        msg.textContent = "No pending request was found. Submit a new request or contact support.";
+        msg.style.color = "#b91c1c";
+        return;
+      }
+      if (!token) {
+        msg.textContent = "Enter the one-time token supplied by support.";
+        msg.style.color = "#b91c1c";
+        return;
+      }
+
+      button.disabled = true;
+      msg.textContent = "Verifying token securely…";
+      msg.style.color = "#334155";
+      try {
+        // The Edge Function must validate the token server-side, check user/request,
+        // enforce expiry and single use, and update the request to pending_review.
+        const { data, error } = await supabaseClient.functions.invoke(
+          "verify-withdrawal-token",
+          { body: { request_id: pendingTokenRequestId, token: token } }
+        );
+        if (error || !data || data.verified !== true) {
+          throw new Error("Token could not be verified. Check it or contact support.");
+        }
+
+        const state = await loadAccountState(currentUser);
+        const tx = state.transactions.find(function(item) {
+          return item.requestId === pendingTokenRequestId;
+        });
+        if (tx) tx.status = "Pending — token verified, awaiting review";
+        saveAccountState(currentUser, state);
+        renderDashboard(currentUser);
+        if (document.getElementById("privateDashboard").classList.contains("show")) {
+          renderPrivateDashboard(currentUser);
+        }
+        msg.textContent = "Token verified. Your request remains pending review; this is not a payment confirmation.";
+        msg.style.color = "#15803d";
+        document.getElementById("withdrawalToken").value = "";
+      } catch (err) {
+        msg.textContent = err && err.message
+          ? err.message
+          : "Secure token verification is not configured. Your request remains pending.";
+        msg.style.color = "#b91c1c";
+        button.disabled = false;
+      }
+    }
+
+
     function copyWalletAddress(inputId, msgId) {
 
       const input = document.getElementById(inputId);
@@ -4585,21 +4691,6 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
         /* ------------------------------
-       TOKEN GENERATOR
-       (mixed letters + numbers)
-    ------------------------------ */
-
-    function generateToken() {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      let token = "";
-      for (let i = 0; i < 8; i++) {
-        token += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return token;
-    }
-
-
-    /* ------------------------------
        BANK DETAILS COLLECTOR
     ------------------------------ */
 
@@ -4704,6 +4795,7 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
+    let pendingTokenRequestId = null;
     let reconcileTimer = null;
 
     function startReconcilePolling() {
@@ -4759,12 +4851,6 @@ const { data, error } = await supabaseClient.auth.signUp({
       }
 
       // Crypto minimum withdrawal rule
-      if (crypto && type === "withdraw" && amount < 25000) {
-        actionMsg.textContent =
-          "Minimum cryptocurrency withdrawal is $25,000. No maximum.";
-        actionMsg.style.color = "#b91c1c";
-        return;
-      }
 
       const state = await loadAccountState(currentUser);
 
@@ -4777,6 +4863,14 @@ const { data, error } = await supabaseClient.auth.signUp({
         }
       }
 
+      if (!crypto && type === "transfer" &&
+          document.getElementById("actionTo").value === "Digital Assets" &&
+          amount > state.availableBalance) {
+        actionMsg.textContent = "Amount exceeds your available banking balance.";
+        actionMsg.style.color = "#b91c1c";
+        return;
+      }
+
       const now = new Date();
       const dateLabel = now.toLocaleDateString("en-US", {
         year: "numeric", month: "short", day: "2-digit"
@@ -4785,35 +4879,26 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       /* --------------------------------------------
          CRYPTO WITHDRAWAL
-         Deducts immediately → shows as pending.
-         You approve / decline in Supabase.
+         Request stays pending; no client-side balance deduction.
+         Token verification and any approval must be server-side.
          -------------------------------------------- */
       if (crypto && type === "withdraw") {
-
         let destination = null;
 
         if (method === "Bitcoin (BTC)" ||
             method === "Ethereum (ETH)" ||
             method === "USDC (ERC-20)") {
-
-          const addr =
-            document.getElementById("actionWalletAddress").value.trim();
-
+          const addr = document.getElementById("actionWalletAddress").value.trim();
           if (!addr) {
-            actionMsg.textContent =
-              "Please enter your destination wallet address.";
+            actionMsg.textContent = "Please enter your destination wallet address.";
             actionMsg.style.color = "#b91c1c";
             return;
           }
-
           destination = { wallet_address: addr };
-
         } else {
-          // Wire transfer → client's bank details
           destination = collectBankDetails();
           if (!destination) {
-            actionMsg.textContent =
-              "Please fill in all your bank details to receive the wire.";
+            actionMsg.textContent = "Please fill in all bank details for this destination.";
             actionMsg.style.color = "#b91c1c";
             return;
           }
@@ -4827,81 +4912,78 @@ const { data, error } = await supabaseClient.auth.signUp({
             amount: amount,
             method: method,
             destination: destination,
-            status: "pending"
+            status: "awaiting_token"
           })
           .select()
           .single();
 
-        if (reqErr) {
-          actionMsg.textContent =
-            "Could not submit request: " + reqErr.message;
+        if (reqErr || !req) {
+          actionMsg.textContent = "Could not submit request. Please try again or contact support.";
           actionMsg.style.color = "#b91c1c";
           return;
         }
 
-        // Deduct from balance (Supabase + local mirror)
-        try {
-          await adjustSupabaseBalance(-amount);
-        } catch (e) {
-          console.warn("Supabase balance deduction failed:", e);
-        }
-        state.digitalAssets -= amount;
-        state.totalPortfolio -= amount;
-
+        pendingTokenRequestId = req.id;
         state.transactions.push({
-          description: "Withdrawal — " + method,
+          description: "Crypto withdrawal — " + method,
           date: dateLabel,
-          status: "Pending — awaiting review",
+          status: "Pending — awaiting token verification",
           amountLabel: "-" + formatUSD(amount),
           amount: amount,
           type: "withdraw",
           requestId: req.id,
           queuedAt: now.toISOString()
         });
-
         saveAccountState(currentUser, state);
         renderDashboard(currentUser);
         if (document.getElementById("privateDashboard").classList.contains("show")) {
           renderPrivateDashboard(currentUser);
         }
-
-        actionMsg.textContent =
-          "Withdrawal submitted. Status: pending review.";
+        showTokenVerificationStep();
+        actionMsg.textContent = "Request submitted and pending. No balance has been deducted.";
         actionMsg.style.color = "#15803d";
-
-        setTimeout(function() {
-          closeModal("actionModal");
-        }, 1800);
-
         return;
       }
 
 
       /* --------------------------------------------
          ONLINE BANKING WITHDRAW / TRANSFER / SEND
-         Queues request + one-time token flow.
+         Request stays pending until secure token verification and review.
          -------------------------------------------- */
       if (!crypto &&
           (type === "withdraw" || type === "transfer" || type === "send")) {
 
-        const destination = collectBankDetails();
-        if (!destination) {
-          actionMsg.textContent =
-            "Please fill in all bank / destination details.";
+        const from = document.getElementById("actionFrom").value;
+        const to = document.getElementById("actionTo").value;
+        const internalCryptoTransfer = type === "transfer" && to === "Digital Assets";
+
+        if ((type === "transfer" || type === "send") && from === to) {
+          actionMsg.textContent = "Source and destination must be different.";
           actionMsg.style.color = "#b91c1c";
           return;
         }
 
-        const from =
-          document.getElementById("actionFrom").value;
-        const to =
-          document.getElementById("actionTo").value;
-
-        if ((type === "transfer" || type === "send") && from === to) {
-          actionMsg.textContent =
-            "Source and destination must be different.";
-          actionMsg.style.color = "#b91c1c";
-          return;
+        let destination;
+        let requestMethod = method;
+        if (internalCryptoTransfer) {
+          destination = { account_type: "digital_assets", source_account: from };
+          requestMethod = "Internal transfer to Digital Assets";
+        } else if (type === "withdraw" &&
+                   (method === "Bitcoin (BTC)" || method === "Ethereum (ETH)" || method === "USDC (ERC-20)")) {
+          const addr = document.getElementById("actionWalletAddress").value.trim();
+          if (!addr) {
+            actionMsg.textContent = "Please enter your destination wallet address.";
+            actionMsg.style.color = "#b91c1c";
+            return;
+          }
+          destination = { wallet_address: addr };
+        } else {
+          destination = collectBankDetails();
+          if (!destination) {
+            actionMsg.textContent = "Please fill in all bank / destination details.";
+            actionMsg.style.color = "#b91c1c";
+            return;
+          }
         }
 
         const { data: req, error: reqErr } = await supabaseClient
@@ -4910,79 +4992,44 @@ const { data, error } = await supabaseClient.auth.signUp({
             user_id: currentUser.id,
             type: type,
             amount: amount,
-            method: method,
+            method: requestMethod,
             destination: destination,
             status: "awaiting_token"
           })
           .select()
           .single();
 
-        if (reqErr) {
-          actionMsg.textContent =
-            "Could not submit request: " + reqErr.message +
-            " — run the Supabase setup SQL (see setup guide).";
+        if (reqErr || !req) {
+          actionMsg.textContent = "Could not submit request. Please try again or contact support.";
           actionMsg.style.color = "#b91c1c";
           return;
         }
 
-        // Generate one-time token (letters + numbers) → Supabase
-        const token = generateToken();
-        try {
-          const { error: tokenErr } = await supabaseClient
-            .from("one_time_tokens")
-            .insert({
-              user_id: currentUser.id,
-              request_id: req ? req.id : null,
-              token: token,
-              purpose: type,
-              status: "active"
-            });
-          if (tokenErr) {
-            console.warn("Token table insert failed:", tokenErr.message);
-          }
-        } catch (e) {
-          console.warn("Token table insert failed:", e);
-        }
-
-        const typeLabel =
-          type === "withdraw"
-            ? "Withdrawal — " + method
-            : (type === "send" ? "Send Money" : "Transfer") +
-              " — " + from + " → " + to;
+        pendingTokenRequestId = req.id;
+        const typeLabel = internalCryptoTransfer
+          ? "Banking → Digital Assets transfer"
+          : (type === "withdraw"
+              ? "Withdrawal — " + requestMethod
+              : (type === "send" ? "Send Money" : "Transfer") + " — " + from + " → " + to);
 
         state.transactions.push({
           description: typeLabel,
           date: dateLabel,
-          status: "Pending — awaiting token",
-          amountLabel: type === "withdraw"
-            ? "-" + formatUSD(amount)
-            : formatUSD(amount),
+          status: "Pending — awaiting token verification",
+          amountLabel: type === "withdraw" ? "-" + formatUSD(amount) : formatUSD(amount),
           amount: amount,
           type: type,
-          requestId: req ? req.id : null,
+          requestId: req.id,
           queuedAt: now.toISOString()
         });
-
         saveAccountState(currentUser, state);
         renderDashboard(currentUser);
         if (document.getElementById("privateDashboard").classList.contains("show")) {
           renderPrivateDashboard(currentUser);
         }
-
-        // Swap the form for the token notice
-        document.getElementById("actionMethodWrap").classList.add("hidden");
-        document.getElementById("bankDetailsWrap").classList.add("hidden");
-        document.getElementById("actionFromWrap").classList.add("hidden");
-        document.getElementById("actionToWrap").classList.add("hidden");
-        document.getElementById("actionAmount").closest(".field")
-          .classList.add("hidden");
-        document.getElementById("actionSubmit").classList.add("hidden");
-        document.getElementById("tokenNoticeWrap").classList.remove("hidden");
-
-        actionMsg.textContent =
-          "Request received. Contact support for your one-time token.";
+        showTokenVerificationStep();
+        actionMsg.textContent = "Request submitted and pending. No balance has been deducted or transferred.";
         actionMsg.style.color = "#15803d";
-
         return;
       }
 
