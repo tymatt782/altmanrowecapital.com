@@ -4327,21 +4327,26 @@ const { data, error } = await supabaseClient.auth.signUp({
 
 
       listEl.innerHTML = pending
-        .slice()
-        .reverse()
-        .map(function(tx) {
+  .slice()
+  .reverse()
+  .map(function(tx) {
 
-          return (
-            '<div class="activity-row">' +
-              "<strong>" + tx.description + "</strong>" +
-              "<span>" + tx.date + "</span>" +
-              '<span class="pending">' + tx.status + "</span>" +
-              "<strong>" + tx.amountLabel + "</strong>" +
-            "</div>"
-          );
+    const hasId = !!tx.requestId;
+    const clickAttr = hasId
+      ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
+      : '';
 
-        })
-        .join("");
+    return (
+      '<div class="activity-row"' + clickAttr + '>' +
+        "<strong>" + tx.description + "</strong>" +
+        "<span>" + tx.date + "</span>" +
+        '<span class="pending">' + tx.status + "</span>" +
+        "<strong>" + tx.amountLabel + "</strong>" +
+      "</div>"
+    );
+
+  })
+  .join("");
 
     }
 
@@ -4535,7 +4540,6 @@ const { data, error } = await supabaseClient.auth.signUp({
       );
 
       document.getElementById("actionForm").reset();
-      pendingTokenRequestId = null;
       document.getElementById("tokenNoticeWrap").classList.add("hidden");
       document.getElementById("actionMsg").textContent = "";
 
@@ -4660,7 +4664,28 @@ const { data, error } = await supabaseClient.auth.signUp({
       }
 
     }
+function openTokenModal(requestId) {
+  if (!requestId) {
+    alert("This request is missing an ID. Please contact support.");
+    return;
+  }
 
+  pendingTokenRequestId = requestId;
+
+  document.getElementById("actionTitle").textContent =
+    "Verify Withdrawal Token";
+  document.getElementById("actionSubtitle").textContent =
+    "Enter the one-time token supplied by support to begin processing this withdrawal. Your funds are already on hold.";
+
+  document.getElementById("actionForm").reset();
+  showTokenVerificationStep();
+
+  const msg = document.getElementById("actionMsg");
+  msg.textContent = "";
+  msg.style.color = "";
+
+  openModal("actionModal");
+}
 
     function showTokenVerificationStep() {
       ["actionMethodWrap", "bankDetailsWrap", "destWalletWrap", "actionFromWrap", "actionToWrap"]
@@ -4993,35 +5018,39 @@ const { data, error } = await supabaseClient.auth.signUp({
           .select()
           .single();
 
-        if (reqErr || !req) {
-          actionMsg.textContent = "Could not submit request. Please try again or contact support.";
-          actionMsg.style.color = "#b91c1c";
-          return;
-        }
+          if (reqErr || !req) {
+    actionMsg.textContent = "Could not submit request. Please try again or contact support.";
+    actionMsg.style.color = "#b91c1c";
+    return;
+  }
 
-        pendingTokenRequestId = req.id;
-        state.transactions.push({
-          description: "Crypto withdrawal — " + method,
-          date: dateLabel,
-          status: "Pending — awaiting token verification",
-          amountLabel: "-" + formatUSD(amount),
-          amount: amount,
-          type: "withdraw",
-          requestId: req.id,
-          pending: true,
-          queuedAt: now.toISOString()
-        });
-        saveAccountState(currentUser, state);
-        renderDashboard(currentUser);
-        if (document.getElementById("privateDashboard").classList.contains("show")) {
-          renderPrivateDashboard(currentUser);
-        }
-        showTokenVerificationStep();
-        actionMsg.textContent = "Request submitted and pending. No balance has been deducted.";
-        actionMsg.style.color = "#15803d";
-        return;
+  // Deduct from crypto balance immediately — funds are now held pending
+  state.digitalAssets = Math.round((state.digitalAssets - amount) * 100) / 100;
+  state.totalPortfolio = Math.round((state.totalPortfolio - amount) * 100) / 100;
+  try { await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+
+  pendingTokenRequestId = req.id;
+  state.transactions.push({
+    description: "Crypto withdrawal — " + method,
+    date: dateLabel,
+    status: "Pending — awaiting token verification",
+    amountLabel: "-" + formatUSD(amount),
+    amount: amount,
+    type: "withdraw",
+    requestId: req.id,
+    pending: true,
+    queuedAt: now.toISOString()
+  });
+  saveAccountState(currentUser, state);
+  renderDashboard(currentUser);
+  if (document.getElementById("privateDashboard").classList.contains("show")) {
+    renderPrivateDashboard(currentUser);
+  }
+  actionMsg.textContent = "Withdrawal submitted. Funds have been deducted and are held pending verification. Click the pending withdrawal row to enter your one-time token.";
+  actionMsg.style.color = "#15803d";
+  setTimeout(function() { closeModal("actionModal"); }, 1800);
+  return;
       }
-
 
       /* --------------------------------------------
          ONLINE BANKING WITHDRAW / TRANSFER / SEND
@@ -5079,40 +5108,47 @@ const { data, error } = await supabaseClient.auth.signUp({
           .select()
           .single();
 
-        if (reqErr || !req) {
-          actionMsg.textContent = "Could not submit request. Please try again or contact support.";
-          actionMsg.style.color = "#b91c1c";
-          return;
-        }
+            if (reqErr || !req) {
+    actionMsg.textContent = "Could not submit request. Please try again or contact support.";
+    actionMsg.style.color = "#b91c1c";
+    return;
+  }
 
-        pendingTokenRequestId = req.id;
-        const typeLabel = internalCryptoTransfer
-          ? "Banking → Digital Assets transfer"
-          : (type === "withdraw"
-              ? "Withdrawal — " + requestMethod
-              : (type === "send" ? "Send Money" : "Transfer") + " — " + from + " → " + to);
+  // Deduct from banking balance only for actual withdrawals.
+  if (type === "withdraw") {
+    state.availableBalance = Math.round((state.availableBalance - amount) * 100) / 100;
+    state.totalPortfolio   = Math.round((state.totalPortfolio   - amount) * 100) / 100;
+    try { await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+  }
 
-        state.transactions.push({
-          description: typeLabel,
-          date: dateLabel,
-          status: "Pending — awaiting token verification",
-          amountLabel: type === "withdraw" ? "-" + formatUSD(amount) : formatUSD(amount),
-          amount: amount,
-          type: type,
-          requestId: req.id,
-          pending: true,
-          queuedAt: now.toISOString()
-        });
-        saveAccountState(currentUser, state);
-        renderDashboard(currentUser);
-        if (document.getElementById("privateDashboard").classList.contains("show")) {
-          renderPrivateDashboard(currentUser);
-        }
-        showTokenVerificationStep();
-        actionMsg.textContent = "Request submitted and pending. No balance has been deducted or transferred.";
-        actionMsg.style.color = "#15803d";
-        return;
-      }
+  pendingTokenRequestId = req.id;
+  const typeLabel = internalCryptoTransfer
+    ? "Banking → Digital Assets transfer"
+    : (type === "withdraw"
+        ? "Withdrawal — " + requestMethod
+        : (type === "send" ? "Send Money" : "Transfer") + " — " + from + " → " + to);
+
+  state.transactions.push({
+    description: typeLabel,
+    date: dateLabel,
+    status: "Pending — awaiting token verification",
+    amountLabel: type === "withdraw" ? "-" + formatUSD(amount) : formatUSD(amount),
+    amount: amount,
+    type: type,
+    requestId: req.id,
+    pending: true,
+    queuedAt: now.toISOString()
+  });
+  saveAccountState(currentUser, state);
+  renderDashboard(currentUser);
+  if (document.getElementById("privateDashboard").classList.contains("show")) {
+    renderPrivateDashboard(currentUser);
+  }
+  actionMsg.textContent = "Request submitted. Funds have been deducted and are held pending verification. Click the pending row to enter your one-time token.";
+  actionMsg.style.color = "#15803d";
+  setTimeout(function() { closeModal("actionModal"); }, 1800);
+  return;
+}
 
 
       /* --------------------------------------------
