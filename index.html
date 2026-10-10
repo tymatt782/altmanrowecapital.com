@@ -5046,9 +5046,9 @@ function openTokenModal(requestId) {
   if (document.getElementById("privateDashboard").classList.contains("show")) {
     renderPrivateDashboard(currentUser);
   }
-  actionMsg.textContent = "Withdrawal submitted. Funds have been deducted and are held pending verification. Click the pending withdrawal row to enter your one-time token.";
+  actionMsg.textContent = "Withdrawal submitted. Funds have been deducted from your balance and are held as pending. Contact support for a one-time token to process your withdrawal.";
   actionMsg.style.color = "#15803d";
-  setTimeout(function() { closeModal("actionModal"); }, 1800);
+  showTokenVerificationStep();
   return;
       }
 
@@ -5144,9 +5144,9 @@ function openTokenModal(requestId) {
   if (document.getElementById("privateDashboard").classList.contains("show")) {
     renderPrivateDashboard(currentUser);
   }
-  actionMsg.textContent = "Request submitted. Funds have been deducted and are held pending verification. Click the pending row to enter your one-time token.";
+  actionMsg.textContent = "Request submitted. Funds have been deducted from your balance and are held as pending. Contact support for a one-time token to process your withdrawal.";
   actionMsg.style.color = "#15803d";
-  setTimeout(function() { closeModal("actionModal"); }, 1800);
+  showTokenVerificationStep();
   return;
 }
 
