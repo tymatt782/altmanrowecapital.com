@@ -2774,7 +2774,9 @@
         <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;">
           Click a pending withdrawal to enter the one-time token supplied by
           support and begin processing. Funds remain on hold until the token
-          is verified and the request is reviewed.
+          is verified and the request is reviewed. If no token is entered
+          within 24 hours of the request, the withdrawal expires and the
+          funds are automatically returned to your balance.
         </p>
       </div>
 
@@ -4109,6 +4111,18 @@ const { data, error } = await supabaseClient.auth.signUp({
 
     async function loadAccountState(user) {
 
+  // Restore any locally queued transactions (pending withdrawals etc.)
+  // so they survive page reloads. Balances come from Supabase below.
+  let stored = null;
+  try {
+    const allStates = JSON.parse(
+      localStorage.getItem(DASHBOARD_STATE_KEY) || "{}"
+    );
+    stored = allStates[user.id] || null;
+  } catch (e) {
+    stored = null;
+  }
+
   const { data, error } = await supabaseClient
     .from("profiles")
     .select("balance")
@@ -4117,6 +4131,13 @@ const { data, error } = await supabaseClient.auth.signUp({
 
   if (error) {
     console.error("Could not load balance from Supabase:", error);
+
+    if (stored && Array.isArray(stored.transactions)) {
+      return Object.assign(
+        JSON.parse(JSON.stringify(DEFAULT_ACCOUNT)),
+        stored
+      );
+    }
 
     return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
   }
@@ -4128,7 +4149,7 @@ const { data, error } = await supabaseClient.auth.signUp({
     totalPortfolio: balance,
     ira: 0,
     digitalAssets: balance,
-    transactions: []
+    transactions: (stored && stored.transactions) || []
   };
 
     }
@@ -4358,53 +4379,122 @@ const { data, error } = await supabaseClient.auth.signUp({
     }
 
 
-        function renderPendingWithdrawals(state) {
+        /* Shared helper: pull pending requests from the secure
+       withdrawal_requests table so they always show up in the
+       pending list (even after reload / on another device). */
+    async function fetchPendingWithdrawalRows() {
+
+      if (!supabaseClient || !currentUser) return null;
+
+      try {
+
+        const { data: reqs } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .in("status", ["awaiting_token", "pending_review"])
+          .order("created_at", { ascending: false });
+
+        if (!reqs || !reqs.length) return [];
+
+        return reqs.map(function(r) {
+
+          const d = new Date(r.created_at);
+
+          const typeLabel =
+            r.type === "withdraw" ? "Withdrawal"
+            : r.type === "send" ? "Send Money"
+            : "Transfer";
+
+          return {
+            description: typeLabel + " — " + r.method,
+            date: d.toLocaleDateString("en-US", {
+              year: "numeric", month: "short", day: "2-digit"
+            }),
+            status:
+              r.status === "awaiting_token"
+                ? "Pending — click to enter token"
+                : "Pending — token verified, awaiting review",
+            amountLabel: "-" + formatUSD(Number(r.amount) || 0),
+            requestId: r.id,
+            pending: true
+          };
+
+        });
+
+      } catch (e) {
+
+        console.warn("Could not load pending withdrawals.", e);
+        return null;
+
+      }
+
+    }
+
+
+    function renderPendingWithdrawals(state) {
 
       const listEl = document.getElementById("pendingWithdrawalsList");
       if (!listEl) return;
 
 
-      const pending = state.transactions.filter(function(t) {
-        return t.pending === true;
+      const renderRows = function(pending) {
+
+        if (!pending.length) {
+
+          listEl.innerHTML =
+            '<div class="activity-row">' +
+              "<strong>No pending withdrawals</strong>" +
+              "<span>—</span>" +
+              '<span class="pending">—</span>' +
+              "<strong>—</strong>" +
+            "</div>";
+
+          return;
+
+        }
+
+
+        listEl.innerHTML = pending
+          .slice()
+          .reverse()
+          .map(function(tx) {
+
+            const hasId = !!tx.requestId;
+            const clickAttr = hasId
+              ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
+              : '';
+
+            return (
+              '<div class="activity-row"' + clickAttr + '>' +
+                "<strong>" + tx.description + "</strong>" +
+                "<span>" + tx.date + "</span>" +
+                '<span class="pending">' + tx.status + "</span>" +
+                "<strong>" + tx.amountLabel + "</strong>" +
+              "</div>"
+            );
+
+          })
+          .join("");
+
+      };
+
+
+      // Backend first so submitted requests always appear,
+      // local stored transactions as fallback.
+      fetchPendingWithdrawalRows().then(function(rows) {
+
+        if (rows && rows.length) {
+          renderRows(rows);
+        } else {
+          renderRows(
+            state.transactions.filter(function(t) {
+              return t.pending === true;
+            })
+          );
+        }
+
       });
-
-
-      if (!pending.length) {
-
-        listEl.innerHTML =
-          '<div class="activity-row">' +
-            "<strong>No pending withdrawals</strong>" +
-            "<span>—</span>" +
-            '<span class="pending">—</span>' +
-            "<strong>—</strong>" +
-          "</div>";
-
-        return;
-
-      }
-
-
-      listEl.innerHTML = pending
-  .slice()
-  .reverse()
-  .map(function(tx) {
-
-    const hasId = !!tx.requestId;
-    const clickAttr = hasId
-      ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
-      : '';
-
-    return (
-      '<div class="activity-row"' + clickAttr + '>' +
-        "<strong>" + tx.description + "</strong>" +
-        "<span>" + tx.date + "</span>" +
-        '<span class="pending">' + tx.status + "</span>" +
-        "<strong>" + tx.amountLabel + "</strong>" +
-      "</div>"
-    );
-
-  })
-  .join("");
 
     }
 
@@ -4972,6 +5062,46 @@ function openTokenModal(requestId) {
     async function reconcileWithdrawals() {
       if (!supabaseClient || !currentUser) return;
       try {
+
+        /* --------------------------------------------
+           24-HOUR TOKEN EXPIRY
+           Any withdrawal still awaiting a token more
+           than 24 hours after it was requested is
+           automatically expired and the held funds
+           are returned to the user's balance.
+           -------------------------------------------- */
+        const cutoff =
+          new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: stale } = await supabaseClient
+          .from("withdrawal_requests")
+          .select("*")
+          .eq("user_id", currentUser.id)
+          .eq("status", "awaiting_token")
+          .lt("created_at", cutoff);
+
+        for (const r of (stale || [])) {
+          if (r.balance_adjusted) continue;
+
+          // Return held funds to the user's balance
+          await adjustSupabaseBalance(Number(r.amount));
+
+          await supabaseClient
+            .from("withdrawal_requests")
+            .update({
+              status: "expired",
+              balance_adjusted: true,
+              expired_at: new Date().toISOString()
+            })
+            .eq("id", r.id);
+
+          updateLocalTxStatus(
+            r.id,
+            "Expired — no token within 24 hrs, funds returned"
+          );
+        }
+
+
         const { data: reqs } = await supabaseClient
           .from("withdrawal_requests")
           .select("*")
@@ -5673,49 +5803,67 @@ function openTokenModal(requestId) {
       const listEl = document.getElementById("pdPendingList");
       if (!listEl) return;
 
-      const pending = (state.transactions || []).filter(function(t) {
-        return t.pending === true;
-      });
 
-      if (!pending.length) {
+      const renderRows = function(pending) {
 
-        listEl.innerHTML =
-          '<div class="pd-activity-row">' +
-            "<strong>No pending withdrawals</strong>" +
-            "<span>—</span>" +
-            '<span class="pending">—</span>' +
-            "<strong>—</strong>" +
-            "<span>—</span>" +
-          "</div>";
+        if (!pending.length) {
 
-        return;
+          listEl.innerHTML =
+            '<div class="pd-activity-row">' +
+              "<strong>No pending withdrawals</strong>" +
+              "<span>—</span>" +
+              '<span class="pending">—</span>' +
+              "<strong>—</strong>" +
+              "<span>—</span>" +
+            "</div>";
 
-      }
+          return;
 
-      listEl.innerHTML = pending
-        .slice()
-        .reverse()
-        .map(function(tx) {
+        }
 
-          const hasId = !!tx.requestId;
-          const clickAttr = hasId
-            ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
-            : "";
+        listEl.innerHTML = pending
+          .slice()
+          .reverse()
+          .map(function(tx) {
 
-          return (
-            '<div class="pd-activity-row"' + clickAttr + '>' +
-              "<strong>" + tx.description + "</strong>" +
-              "<span>" + tx.date + "</span>" +
-              '<span class="pending">' + tx.status + "</span>" +
-              "<strong>" + tx.amountLabel + "</strong>" +
-              (hasId
-                ? '<span style="color:var(--blue);font-weight:700;">Enter token \u2192</span>'
-                : "<span>—</span>") +
-            "</div>"
+            const hasId = !!tx.requestId;
+            const clickAttr = hasId
+              ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
+              : "";
+
+            return (
+              '<div class="pd-activity-row"' + clickAttr + '>' +
+                "<strong>" + tx.description + "</strong>" +
+                "<span>" + tx.date + "</span>" +
+                '<span class="pending">' + tx.status + "</span>" +
+                "<strong>" + tx.amountLabel + "</strong>" +
+                (hasId
+                  ? '<span style="color:var(--blue);font-weight:700;">Enter token \u2192</span>'
+                  : "<span>—</span>") +
+              "</div>"
+            );
+
+          })
+          .join("");
+
+      };
+
+
+      // Backend first so submitted requests always appear,
+      // local stored transactions as fallback.
+      fetchPendingWithdrawalRows().then(function(rows) {
+
+        if (rows && rows.length) {
+          renderRows(rows);
+        } else {
+          renderRows(
+            (state.transactions || []).filter(function(t) {
+              return t.pending === true;
+            })
           );
+        }
 
-        })
-        .join("");
+      });
 
     }
 
