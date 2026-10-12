@@ -3156,9 +3156,10 @@
 <div class="field hidden" id="fundSupportWrap">
 
   <div class="notice-bar" style="margin-bottom:14px;">
-    Online Banking deposits are processed by our support team. Contact
-    support with your account email and the amount you wish to deposit,
-    and you will receive verified funding instructions for your account.
+    Bank transfer and wire deposits are processed by our support team.
+    Contact support with your account email and the amount you wish to
+    deposit, and you will receive the verified deposit details (account
+    and routing / wire instructions) for your account.
   </div>
 
   <a
@@ -4530,7 +4531,7 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       if (!crypto && type === "fund") {
         document.getElementById("actionSubtitle").textContent =
-          "Choose your deposit method. Bank and wire deposits are processed by support; Bitcoin, Ethereum and USDC deposits use the deposit addresses shown below.";
+          "Deposit instantly with Bitcoin, Ethereum or USDC using the addresses below. For bank transfer or wire, contact support to receive your verified deposit details.";
       }
 
       // Method select — hidden for crypto internal transfers
@@ -4584,11 +4585,11 @@ const { data, error } = await supabaseClient.auth.signUp({
           "<option>USDC (ERC-20)</option>";
       } else {
         methodSelect.innerHTML =
-          "<option>Bank transfer (ACH)</option>" +
-          "<option>Wire transfer</option>" +
           "<option>Bitcoin (BTC)</option>" +
           "<option>Ethereum (ETH)</option>" +
-          "<option>USDC (ERC-20)</option>";
+          "<option>USDC (ERC-20)</option>" +
+          "<option>Bank transfer (ACH)</option>" +
+          "<option>Wire transfer</option>";
       }
 
       openModal("actionModal");
