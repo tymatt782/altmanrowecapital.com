@@ -1958,9 +1958,10 @@
 
 
               <div class="notice-bar">
-                To fund your Online Banking account, please
-                <strong>contact our support team</strong>. Support will
-                provide verified deposit instructions for your account.
+                To fund via <strong>bank transfer or wire</strong>, please
+                contact our support team for verified deposit instructions.
+                To fund with <strong>Bitcoin, Ethereum or USDC</strong>, open
+                Fund Account and send crypto to the deposit address shown.
   
               </div>
 
@@ -2866,10 +2867,11 @@
           </div>
 
           <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
-            Deposits to Online Banking accounts are processed by our
-            support team. Contact support with your account email and the
-            amount you wish to deposit to receive verified funding
-            instructions.
+            Bank and wire deposits to Online Banking accounts are processed
+            by our support team — contact support with your account email and
+            the amount you wish to deposit to receive verified funding
+            instructions. Bitcoin, Ethereum and USDC deposits can be made
+            directly using the deposit addresses in the Fund Account dialog.
           </p>
         </div>
 
@@ -4507,9 +4509,6 @@ const { data, error } = await supabaseClient.auth.signUp({
       const crypto = currentUser && isCryptoUser(currentUser);
       const t = titles[type] || titles.fund;
 
-      // Online Banking funding is support-directed
-      const supportOnly = (type === "fund" && !crypto);
-
       document.getElementById("actionType").value = type;
       document.getElementById("actionTitle").textContent = t[0];
       document.getElementById("actionSubtitle").textContent = t[1];
@@ -4519,14 +4518,24 @@ const { data, error } = await supabaseClient.auth.signUp({
           "Enter your withdrawal details below. Minimum withdrawal: $25,000 — no maximum. After submitting, contact support for a one-time verification token to begin processing.";
       }
 
-      if (!crypto && (type === "withdraw" || type === "transfer" || type === "send")) {
+      if (!crypto && type === "withdraw") {
+        document.getElementById("actionSubtitle").textContent = t[1] +
+          " Minimum withdrawal via Bitcoin, Ethereum or USDC: $25,000 — no maximum. Bank and wire withdrawals stay pending until a one-time verification token is verified and the request is reviewed.";
+      }
+
+      if (!crypto && (type === "transfer" || type === "send")) {
         document.getElementById("actionSubtitle").textContent = t[1] +
           " After submitting, you will be directed to contact support for a one-time verification token. Your funds stay pending until the token is verified and the request is reviewed.";
       }
 
-      // Method select — hidden for crypto internal transfers and support-only funding
+      if (!crypto && type === "fund") {
+        document.getElementById("actionSubtitle").textContent =
+          "Choose your deposit method. Bank and wire deposits are processed by support; Bitcoin, Ethereum and USDC deposits use the deposit addresses shown below.";
+      }
+
+      // Method select — hidden for crypto internal transfers
       document.getElementById("actionMethodWrap").classList.toggle(
-        "hidden", (type === "transfer" && crypto) || supportOnly
+        "hidden", (type === "transfer" && crypto)
       );
 
       document.getElementById("actionFromWrap").classList.toggle(
@@ -4551,16 +4560,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         if (msg) msg.textContent = "";
       });
 
-      document.getElementById("fundSupportWrap").classList.toggle(
-        "hidden", !supportOnly
-      );
-
-      document.getElementById("actionAmount").closest(".field")
-        .classList.toggle("hidden", supportOnly);
-
-      document.getElementById("actionSubmit").classList.toggle(
-        "hidden", supportOnly
-      );
+      document.getElementById("fundSupportWrap").classList.add("hidden");
 
       document.getElementById("actionForm").reset();
       document.getElementById("tokenNoticeWrap").classList.add("hidden");
@@ -4585,14 +4585,17 @@ const { data, error } = await supabaseClient.auth.signUp({
       } else {
         methodSelect.innerHTML =
           "<option>Bank transfer (ACH)</option>" +
-          "<option>Wire transfer</option>";
+          "<option>Wire transfer</option>" +
+          "<option>Bitcoin (BTC)</option>" +
+          "<option>Ethereum (ETH)</option>" +
+          "<option>USDC (ERC-20)</option>";
       }
 
       openModal("actionModal");
 
       // Show the correct destination fields for the default method
       if (type === "withdraw" || type === "transfer" ||
-          type === "send" || (type === "fund" && crypto)) {
+          type === "send" || type === "fund") {
         handleFundMethodChange();
       }
 
@@ -4624,12 +4627,23 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       const type = document.getElementById("actionType").value;
       const method = document.getElementById("actionMethod").value;
+      const crypto = currentUser && isCryptoUser(currentUser);
 
       const depositMap = {
         "Bitcoin (BTC)": "btcWalletWrap",
         "Ethereum (ETH)": "ethWalletWrap",
         "USDC (ERC-20)": "usdcWalletWrap"
       };
+
+      const isCryptoMethod =
+        method === "Bitcoin (BTC)" ||
+        method === "Ethereum (ETH)" ||
+        method === "USDC (ERC-20)";
+
+      const amountField =
+        document.getElementById("actionAmount").closest(".field");
+      const submitButton =
+        document.getElementById("actionSubmit");
 
       [
         "btcWalletWrap", "ethWalletWrap", "usdcWalletWrap",
@@ -4638,6 +4652,25 @@ const { data, error } = await supabaseClient.auth.signUp({
         const wrap = document.getElementById(id);
         if (wrap) wrap.classList.add("hidden");
       });
+
+      // Re-enable amount + submit by default; specific flows hide them below
+      document.getElementById("fundSupportWrap").classList.add("hidden");
+      amountField.classList.remove("hidden");
+      submitButton.classList.remove("hidden");
+
+      // ONLINE BANKING DEPOSIT:
+      // Bank / wire → direct the user to support for verified instructions.
+      // Bitcoin / Ethereum / USDC → show our crypto deposit wallet addresses.
+      if (type === "fund" && !crypto) {
+        if (isCryptoMethod) {
+          document.getElementById(depositMap[method]).classList.remove("hidden");
+        } else {
+          document.getElementById("fundSupportWrap").classList.remove("hidden");
+          amountField.classList.add("hidden");
+          submitButton.classList.add("hidden");
+        }
+        return;
+      }
 
       // Funding a crypto account → show OUR deposit address
       if (type === "fund") {
@@ -4651,12 +4684,18 @@ const { data, error } = await supabaseClient.auth.signUp({
         return;
       }
 
-      // Withdrawing / sending out → collect the CLIENT'S destination
-      if (method === "Bitcoin (BTC)" ||
-          method === "Ethereum (ETH)" ||
-          method === "USDC (ERC-20)") {
+      // Crypto payouts go to an external wallet — the internal "To"
+      // account select does not apply, so hide it for transfers / sends.
+      if (type === "transfer" || type === "send") {
+        document.getElementById("actionToWrap").classList.toggle(
+          "hidden", isCryptoMethod
+        );
+      }
 
-        if (type === "withdraw") {
+      // Withdrawing / sending / transferring out → collect the CLIENT'S destination
+      if (isCryptoMethod) {
+
+        if (type === "withdraw" || type === "transfer" || type === "send") {
           document.getElementById("destWalletWrap").classList.remove("hidden");
 
           const asset = method.split(" ")[0];
@@ -4974,11 +5013,26 @@ function openTokenModal(requestId) {
         return;
       }
 
-      // Crypto minimum withdrawal rule
+      const isCryptoMethod =
+        method === "Bitcoin (BTC)" ||
+        method === "Ethereum (ETH)" ||
+        method === "USDC (ERC-20)";
+
+      // Transfers out through crypto carry a $25,000 minimum (no maximum)
+      const cryptoPayout =
+        isCryptoMethod &&
+        (type === "withdraw" || type === "transfer" || type === "send");
+
+      if (cryptoPayout && amount < 25000) {
+        actionMsg.textContent =
+          "Minimum amount for crypto withdrawals and transfers is $25,000. There is no maximum limit.";
+        actionMsg.style.color = "#b91c1c";
+        return;
+      }
 
       const state = await loadAccountState(currentUser);
 
-      if (type === "withdraw") {
+      if (type === "withdraw" || (!crypto && cryptoPayout)) {
         const source = crypto ? state.digitalAssets : state.availableBalance;
         if (amount > source) {
           actionMsg.textContent = "Amount exceeds your available balance.";
@@ -5086,7 +5140,7 @@ function openTokenModal(requestId) {
         const to = document.getElementById("actionTo").value;
         const internalCryptoTransfer = type === "transfer" && to === "Digital Assets";
 
-        if ((type === "transfer" || type === "send") && from === to) {
+        if ((type === "transfer" || type === "send") && !cryptoPayout && from === to) {
           actionMsg.textContent = "Source and destination must be different.";
           actionMsg.style.color = "#b91c1c";
           return;
@@ -5100,15 +5154,14 @@ function openTokenModal(requestId) {
         } else if (internalCryptoTransfer) {
           destination = { account_type: "digital_assets", source_account: from };
           requestMethod = "Internal transfer to Digital Assets";
-        } else if (type === "withdraw" &&
-                   (method === "Bitcoin (BTC)" || method === "Ethereum (ETH)" || method === "USDC (ERC-20)")) {
+        } else if (cryptoPayout) {
           const addr = document.getElementById("actionWalletAddress").value.trim();
           if (!addr) {
             actionMsg.textContent = "Please enter your destination wallet address.";
             actionMsg.style.color = "#b91c1c";
             return;
           }
-          destination = { wallet_address: addr };
+          destination = { wallet_address: addr, asset: method };
         } else {
           destination = collectBankDetails();
           if (!destination) {
@@ -5137,8 +5190,8 @@ function openTokenModal(requestId) {
     return;
   }
 
-  // Deduct from banking balance only for actual withdrawals.
-  if (type === "withdraw") {
+  // Deduct from banking balance for withdrawals and crypto payouts.
+  if (type === "withdraw" || cryptoPayout) {
     state.availableBalance = Math.round((state.availableBalance - amount) * 100) / 100;
     state.totalPortfolio   = Math.round((state.totalPortfolio   - amount) * 100) / 100;
     try { await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
@@ -5147,15 +5200,18 @@ function openTokenModal(requestId) {
   pendingTokenRequestId = req.id;
   const typeLabel = internalCryptoTransfer
     ? "Banking → Digital Assets transfer"
-    : (type === "withdraw"
-        ? "Withdrawal — " + requestMethod
-        : (type === "send" ? "Send Money" : "Transfer") + " — " + from + " → " + to);
+    : cryptoPayout
+      ? (type === "withdraw" ? "Withdrawal" : (type === "send" ? "Send Money" : "Transfer")) +
+        " via " + method + " — external wallet"
+      : (type === "withdraw"
+          ? "Withdrawal — " + requestMethod
+          : (type === "send" ? "Send Money" : "Transfer") + " — " + from + " → " + to);
 
   state.transactions.push({
     description: typeLabel,
     date: dateLabel,
     status: "Pending — awaiting token verification",
-    amountLabel: type === "withdraw" ? "-" + formatUSD(amount) : formatUSD(amount),
+    amountLabel: (type === "withdraw" || cryptoPayout) ? "-" + formatUSD(amount) : formatUSD(amount),
     amount: amount,
     type: type,
     requestId: req.id,
@@ -5183,7 +5239,11 @@ function openTokenModal(requestId) {
       if (type === "fund") {
         description = "Funding request — " + method;
         amountLabel = "+" + formatUSD(amount);
-        state.digitalAssets += amount;
+        if (crypto) {
+          state.digitalAssets += amount;
+        } else {
+          state.availableBalance += amount;
+        }
         state.totalPortfolio += amount;
         try {
           await adjustSupabaseBalance(amount);
