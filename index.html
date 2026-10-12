@@ -3085,16 +3085,16 @@
   <p id="btcCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
 </div>
 
-<!-- ETHEREUM WALLET DISPLAY (hidden until Ethereum is chosen) -->
-<div class="field hidden" id="ethWalletWrap">
-  <label>Ethereum Deposit Address (ERC-20)</label>
+<!-- USDT WALLET DISPLAY (hidden until USDT is chosen) -->
+<div class="field hidden" id="usdtWalletWrap">
+  <label>USDT Deposit Address (TRC-20)</label>
 
   <div style="display:flex;gap:8px;align-items:center;">
     <input
       class="form-control"
       type="text"
-      id="ethWalletAddress"
-      value="0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+      id="usdtWalletAddress"
+      value="0x2D1b39e8689bC061A8D28761aBe3cC74614C6365"
       readonly
       onclick="this.select()"
       style="font-family:monospace;font-size:12px;"
@@ -3102,7 +3102,7 @@
     <button
       type="button"
       class="btn btn-outline"
-      onclick="copyEthAddress()"
+      onclick="copyUsdtAddress()"
       style="white-space:nowrap;"
     >
       Copy
@@ -3110,38 +3110,13 @@
   </div>
 
   <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
-    ⚠️ Send <strong>only Ethereum (ETH)</strong> or supported ERC-20
-    assets to this address on the Ethereum network. Sending any other
-    asset or using the wrong network will result in permanent loss of
-    funds.
+    ⚠️ Send <strong>only USDT (TRC-20)</strong> to this address on the
+    Tron network. Sending any other asset or using the wrong network
+    will result in permanent loss of funds.
   </p>
 
-  <p id="ethCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+  <p id="usdtCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
 </div>
-
-<!-- USDC WALLET DISPLAY (hidden until USDC is chosen) -->
-<div class="field hidden" id="usdcWalletWrap">
-  <label>USDC Deposit Address (ERC-20)</label>
-
-  <div style="display:flex;gap:8px;align-items:center;">
-    <input
-      class="form-control"
-      type="text"
-      id="usdcWalletAddress"
-      value="0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
-      readonly
-      onclick="this.select()"
-      style="font-family:monospace;font-size:12px;"
-    >
-    <button
-      type="button"
-      class="btn btn-outline"
-      onclick="copyUsdcAddress()"
-      style="white-space:nowrap;"
-    >
-      Copy
-    </button>
-  </div>
 
   <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
     ⚠️ Send <strong>only USDC on the Ethereum (ERC-20) network</strong>
