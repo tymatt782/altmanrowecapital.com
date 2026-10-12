@@ -3085,6 +3085,39 @@
   <p id="btcCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
 </div>
 
+<!-- ETHEREUM WALLET DISPLAY (hidden until Ethereum is chosen) -->
+<div class="field hidden" id="ethWalletWrap">
+  <label>Ethereum Deposit Address (ERC-20)</label>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input
+      class="form-control"
+      type="text"
+      id="ethWalletAddress"
+      value="0xREPLACE_WITH_YOUR_ETH_ADDRESS"
+      readonly
+      onclick="this.select()"
+      style="font-family:monospace;font-size:12px;"
+    >
+    <button
+      type="button"
+      class="btn btn-outline"
+      onclick="copyEthAddress()"
+      style="white-space:nowrap;"
+    >
+      Copy
+    </button>
+  </div>
+
+  <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
+    ⚠️ Send <strong>only Ethereum (ETH)</strong> to this address on the
+    Ethereum network. Sending any other asset or using the wrong network
+    will result in permanent loss of funds.
+  </p>
+
+  <p id="ethCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
+</div>
+
 <!-- USDT WALLET DISPLAY (hidden until USDT is chosen) -->
 <div class="field hidden" id="usdtWalletWrap">
   <label>USDT Deposit Address (TRC-20)</label>
@@ -3117,6 +3150,30 @@
 
   <p id="usdtCopyMsg" style="font-size:12px;font-weight:600;margin-top:6px;"></p>
 </div>
+
+<!-- USDC WALLET DISPLAY (hidden until USDC is chosen) -->
+<div class="field hidden" id="usdcWalletWrap">
+  <label>USDC Deposit Address (ERC-20)</label>
+
+  <div style="display:flex;gap:8px;align-items:center;">
+    <input
+      class="form-control"
+      type="text"
+      id="usdcWalletAddress"
+      value="0xREPLACE_WITH_YOUR_USDC_ADDRESS"
+      readonly
+      onclick="this.select()"
+      style="font-family:monospace;font-size:12px;"
+    >
+    <button
+      type="button"
+      class="btn btn-outline"
+      onclick="copyUsdcAddress()"
+      style="white-space:nowrap;"
+    >
+      Copy
+    </button>
+  </div>
 
   <p style="font-size:11px;color:#64748b;margin-top:8px;line-height:1.5;">
     ⚠️ Send <strong>only USDC on the Ethereum (ERC-20) network</strong>
@@ -4524,14 +4581,14 @@ const { data, error } = await supabaseClient.auth.signUp({
 
       // Reset all dynamic wraps
       [
-        "btcWalletWrap", "ethWalletWrap", "usdcWalletWrap",
+        "btcWalletWrap", "ethWalletWrap", "usdtWalletWrap", "usdcWalletWrap",
         "destWalletWrap", "bankDetailsWrap", "tokenNoticeWrap"
       ].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) el.classList.add("hidden");
       });
 
-      ["btcCopyMsg", "ethCopyMsg", "usdcCopyMsg"].forEach(function(id) {
+      ["btcCopyMsg", "ethCopyMsg", "usdtCopyMsg", "usdcCopyMsg"].forEach(function(id) {
         const msg = document.getElementById(id);
         if (msg) msg.textContent = "";
       });
@@ -4548,6 +4605,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         methodSelect.innerHTML =
           "<option>Bitcoin (BTC)</option>" +
           "<option>Ethereum (ETH)</option>" +
+          "<option>USDT (TRC-20)</option>" +
           "<option>USDC (ERC-20)</option>" +
           "<option>Wire transfer</option>";
       } else if (type === "withdraw") {
@@ -4557,11 +4615,13 @@ const { data, error } = await supabaseClient.auth.signUp({
           "<option>Transfer to Crypto Account (Internal)</option>" +
           "<option>Bitcoin (BTC)</option>" +
           "<option>Ethereum (ETH)</option>" +
+          "<option>USDT (TRC-20)</option>" +
           "<option>USDC (ERC-20)</option>";
       } else {
         methodSelect.innerHTML =
           "<option>Bitcoin (BTC)</option>" +
           "<option>Ethereum (ETH)</option>" +
+          "<option>USDT (TRC-20)</option>" +
           "<option>USDC (ERC-20)</option>" +
           "<option>Bank transfer (ACH)</option>" +
           "<option>Wire transfer</option>";
@@ -4608,12 +4668,14 @@ const { data, error } = await supabaseClient.auth.signUp({
       const depositMap = {
         "Bitcoin (BTC)": "btcWalletWrap",
         "Ethereum (ETH)": "ethWalletWrap",
+        "USDT (TRC-20)": "usdtWalletWrap",
         "USDC (ERC-20)": "usdcWalletWrap"
       };
 
       const isCryptoMethod =
         method === "Bitcoin (BTC)" ||
         method === "Ethereum (ETH)" ||
+        method === "USDT (TRC-20)" ||
         method === "USDC (ERC-20)";
 
       const amountField =
@@ -4622,7 +4684,7 @@ const { data, error } = await supabaseClient.auth.signUp({
         document.getElementById("actionSubmit");
 
       [
-        "btcWalletWrap", "ethWalletWrap", "usdcWalletWrap",
+        "btcWalletWrap", "ethWalletWrap", "usdtWalletWrap", "usdcWalletWrap",
         "destWalletWrap", "bankDetailsWrap"
       ].forEach(function(id) {
         const wrap = document.getElementById(id);
@@ -4828,6 +4890,11 @@ function openTokenModal(requestId) {
       copyWalletAddress("usdcWalletAddress", "usdcCopyMsg");
     }
 
+
+    function copyUsdtAddress() {
+      copyWalletAddress("usdtWalletAddress", "usdtCopyMsg");
+    }
+
         /* ------------------------------
        BANK DETAILS COLLECTOR
     ------------------------------ */
@@ -4992,6 +5059,7 @@ function openTokenModal(requestId) {
       const isCryptoMethod =
         method === "Bitcoin (BTC)" ||
         method === "Ethereum (ETH)" ||
+        method === "USDT (TRC-20)" ||
         method === "USDC (ERC-20)";
 
       // Transfers out through crypto carry a $25,000 minimum (no maximum)
@@ -5219,7 +5287,6 @@ function openTokenModal(requestId) {
   // Do not credit any balance when a deposit is merely requested.
   // The balance can change only after the deposit is verified.
 } else {
-      } else {
         const from =
           document.getElementById("actionFrom").value;
         const to =
