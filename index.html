@@ -5213,19 +5213,12 @@ function openTokenModal(requestId) {
       let amountLabel = "";
 
       if (type === "fund") {
-        description = "Funding request — " + method;
-        amountLabel = "+" + formatUSD(amount);
-        if (crypto) {
-          state.digitalAssets += amount;
-        } else {
-          state.availableBalance += amount;
-        }
-        state.totalPortfolio += amount;
-        try {
-          await adjustSupabaseBalance(amount);
-        } catch (e) {
-          console.warn("Supabase balance update failed:", e);
-        }
+  description = "Deposit awaiting payment confirmation — " + method;
+  amountLabel = formatUSD(amount);
+
+  // Do not credit any balance when a deposit is merely requested.
+  // The balance can change only after the deposit is verified.
+} else {
       } else {
         const from =
           document.getElementById("actionFrom").value;
