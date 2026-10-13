@@ -4101,6 +4101,44 @@ const { data, error } = await supabaseClient.auth.signUp({
     let currentUser = null;
 
 
+    /* ------------------------------
+       BALANCE INTEGRITY SETTINGS
+       ------------------------------ */
+
+    // Withdrawal requests created BEFORE this timestamp are LEGACY.
+    // They are NEVER re-credited, even if they show as expired/declined.
+    // Set this to the exact moment you deploy this fix.
+    const REVERSAL_CUTOFF = "2026-10-13T11:45:00.000Z";
+
+    // Local back-up list of request IDs whose funds were already returned,
+    // so a reversal can NEVER happen twice — even if the DB flag update fails.
+    const REVERSED_IDS_KEY = "arc_reversed_request_ids_v1";
+
+
+    function wasReversed(id) {
+      try {
+        return JSON.parse(
+          localStorage.getItem(REVERSED_IDS_KEY) || "[]"
+        ).indexOf(id) !== -1;
+      } catch (e) {
+        return false;
+      }
+    }
+
+
+    function markReversed(id) {
+      try {
+        const list = JSON.parse(
+          localStorage.getItem(REVERSED_IDS_KEY) || "[]"
+        );
+        if (list.indexOf(id) === -1) {
+          list.push(id);
+          localStorage.setItem(REVERSED_IDS_KEY, JSON.stringify(list));
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+
     function formatUSD(amount) {
       return amount.toLocaleString("en-US", {
         style: "currency",
@@ -4132,14 +4170,13 @@ const { data, error } = await supabaseClient.auth.signUp({
   if (error) {
     console.error("Could not load balance from Supabase:", error);
 
-    if (stored && Array.isArray(stored.transactions)) {
-      return Object.assign(
-        JSON.parse(JSON.stringify(DEFAULT_ACCOUNT)),
-        stored
-      );
-    }
-
-    return JSON.parse(JSON.stringify(DEFAULT_ACCOUNT));
+    // Supabase is the single source of truth for balances.
+    // Never fall back to stored balances (they may contain amounts
+    // already reversed). Only keep stored transactions for display.
+    return Object.assign(
+      JSON.parse(JSON.stringify(DEFAULT_ACCOUNT)),
+      { transactions: (stored && stored.transactions) || [] }
+    );
   }
 
   const balance = Number(data.balance) || 0;
@@ -5015,18 +5052,33 @@ function openTokenModal(requestId) {
     ------------------------------ */
 
     async function adjustSupabaseBalance(delta) {
-      if (!supabaseClient || !currentUser) return;
-      const { data } = await supabaseClient
+      if (!supabaseClient || !currentUser) return false;
+
+      const { data, error } = await supabaseClient
         .from("profiles")
         .select("balance")
         .eq("id", currentUser.id)
         .single();
+
+      if (error) {
+        console.warn("Balance read failed:", error);
+        return false;
+      }
+
       const current = Number(data && data.balance) || 0;
       const next = Math.round((current + delta) * 100) / 100;
-      await supabaseClient
+
+      const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({ balance: next })
         .eq("id", currentUser.id);
+
+      if (updateError) {
+        console.warn("Balance update failed:", updateError);
+        return false;
+      }
+
+      return true;
     }
 
 
@@ -5081,10 +5133,20 @@ function openTokenModal(requestId) {
           .lt("created_at", cutoff);
 
         for (const r of (stale || [])) {
-          if (r.balance_adjusted) continue;
+          // Never reverse the same request twice (DB flag + local back-up)
+          if (r.balance_adjusted || wasReversed(r.id)) continue;
 
-          // Return held funds to the user's balance
-          await adjustSupabaseBalance(Number(r.amount));
+          // Only reverse if funds were actually deducted at submission
+          if (r.funds_held !== true) continue;
+
+          // LEGACY requests (created before this fix) are never reversed
+          if (r.created_at < REVERSAL_CUTOFF) continue;
+
+          // Return held funds to the user's balance — exactly once
+          const ok = await adjustSupabaseBalance(Number(r.amount));
+          if (!ok) continue; // balance write failed — retry on next poll
+
+          markReversed(r.id);
 
           await supabaseClient
             .from("withdrawal_requests")
@@ -5113,14 +5175,20 @@ function openTokenModal(requestId) {
         for (const r of reqs) {
           if (r.status === "declined" &&
               !r.balance_adjusted &&
-              r.type === "withdraw") {
-            // Return funds to the user's main balance
-            await adjustSupabaseBalance(Number(r.amount));
-            await supabaseClient
-              .from("withdrawal_requests")
-              .update({ balance_adjusted: true })
-              .eq("id", r.id);
-            updateLocalTxStatus(r.id, "Declined — funds returned");
+              !wasReversed(r.id) &&
+              r.type === "withdraw" &&
+              r.funds_held === true &&
+              r.created_at >= REVERSAL_CUTOFF) {
+            // Return funds to the user's main balance — exactly once
+            const ok = await adjustSupabaseBalance(Number(r.amount));
+            if (ok) {
+              markReversed(r.id);
+              await supabaseClient
+                .from("withdrawal_requests")
+                .update({ balance_adjusted: true })
+                .eq("id", r.id);
+              updateLocalTxStatus(r.id, "Declined — funds returned");
+            }
           } else if (r.status === "approved") {
             updateLocalTxStatus(r.id, "Approved — completed");
           }
@@ -5278,7 +5346,15 @@ function openTokenModal(requestId) {
   // Deduct from crypto balance immediately — funds are now held pending
   state.digitalAssets = Math.round((state.digitalAssets - amount) * 100) / 100;
   state.totalPortfolio = Math.round((state.totalPortfolio - amount) * 100) / 100;
-  try { await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+  let cryptoFundsHeld = false;
+  try { cryptoFundsHeld = await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+  if (cryptoFundsHeld) {
+    // Mark the request so a later expiry/decline knows funds were truly held
+    await supabaseClient
+      .from("withdrawal_requests")
+      .update({ funds_held: true })
+      .eq("id", req.id);
+  }
 
   pendingTokenRequestId = req.id;
   state.transactions.push({
@@ -5368,7 +5444,15 @@ function openTokenModal(requestId) {
   if (type === "withdraw" || cryptoPayout) {
     state.availableBalance = Math.round((state.availableBalance - amount) * 100) / 100;
     state.totalPortfolio   = Math.round((state.totalPortfolio   - amount) * 100) / 100;
-    try { await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+    let bankFundsHeld = false;
+    try { bankFundsHeld = await adjustSupabaseBalance(-amount); } catch (e) { console.warn(e); }
+    if (bankFundsHeld) {
+      // Mark the request so a later expiry/decline knows funds were truly held
+      await supabaseClient
+        .from("withdrawal_requests")
+        .update({ funds_held: true })
+        .eq("id", req.id);
+    }
   }
 
   pendingTokenRequestId = req.id;
