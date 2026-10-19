@@ -5892,7 +5892,8 @@ function openTokenModal(requestId) {
           .single();
 
           if (reqErr || !req) {
-    actionMsg.textContent = "Could not submit request. Please try again or contact support.";
+    console.error("Supabase Insert Error:", reqErr);
+    actionMsg.textContent = "Error: " + (reqErr ? reqErr.message : "Unknown error");
     actionMsg.style.color = "#b91c1c";
     return;
   }
@@ -5987,7 +5988,8 @@ function openTokenModal(requestId) {
           .single();
 
             if (reqErr || !req) {
-    actionMsg.textContent = "Could not submit request. Please try again or contact support.";
+    console.error("Supabase Insert Error:", reqErr);
+    actionMsg.textContent = "Error: " + (reqErr ? reqErr.message : "Unknown error");
     actionMsg.style.color = "#b91c1c";
     return;
   }
