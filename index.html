@@ -2882,6 +2882,242 @@
     </div>
   </div>
 
+  <!-- ==========================================
+       CRYPTO ACCOUNT DASHBOARD
+       Only rendered after successful Supabase
+       authentication for Crypto Account users.
+       Includes live trading signals, pending
+       transactions and token-based withdrawals.
+       ========================================== -->
+  <div class="private-dash" id="cryptoDashboard" aria-hidden="true">
+
+    <!-- TOP NAVIGATION -->
+    <div class="pd-topnav">
+      <div class="container pd-topnav-inner">
+
+        <div class="pd-brand">
+          <span class="brand-mark">A</span>
+          <span>Altman Rowe Capital</span>
+        </div>
+
+        <nav class="pd-nav-links" id="cdNavLinks">
+          <button class="active" onclick="cdNavTo('overview', this)">Dashboard</button>
+          <button onclick="openAccountAction('fund')">Fund Account</button>
+          <button onclick="openAccountAction('withdraw')">Withdraw</button>
+          <button onclick="cdNavTo('cdPendingSection', this)">Pending</button>
+          <button onclick="cdNavTo('cdSignalsSection', this)">Signals</button>
+          <button onclick="cdNavTo('cdSupportSection', this)">Support</button>
+          <button onclick="cdNavTo('cdSettingsSection', this)">Profile</button>
+        </nav>
+
+        <button class="btn btn-outline pd-logout" onclick="handleSignOut()">
+          Secure Logout
+        </button>
+
+      </div>
+    </div>
+
+    <div class="container pd-main">
+
+      <!-- WELCOME -->
+      <div class="pd-welcome" id="cdOverview">
+        <h1 id="cdGreeting">Good morning</h1>
+        <p id="cdSubGreeting">Here&#39;s your digital assets account overview.</p>
+      </div>
+
+      <!-- BALANCES -->
+      <div class="pd-balance-strip">
+
+        <div class="pd-total">
+          <span>Crypto portfolio value</span>
+          <strong id="cdTotalBalance">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Available balance</span>
+          <strong id="cdAvailableBal">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Crypto holdings (USD)</span>
+          <strong id="cdHoldingsBal">$0.00</strong>
+        </div>
+
+        <div>
+          <span>Portfolio change</span>
+          <strong class="positive" id="cdChangeBal">+0.00%</strong>
+        </div>
+
+        <div>
+          <span>Pending requests</span>
+          <strong id="cdPendingCount">0</strong>
+        </div>
+
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="pd-section" id="cdQuickActions">
+        <h2>Quick actions</h2>
+
+        <div class="pd-quick-actions">
+          <button class="pd-quick" onclick="openAccountAction('fund')">
+            <div class="icon">＋</div>
+            Fund Account
+          </button>
+
+          <button class="pd-quick" onclick="openAccountAction('withdraw')">
+            <div class="icon">−</div>
+            Withdraw
+          </button>
+
+          <button class="pd-quick" onclick="cdScrollTo('cdSignalsSection')">
+            <div class="icon">↗</div>
+            Trading Signals
+          </button>
+
+          <button class="pd-quick" onclick="cdNavTo('cdPendingSection')">
+            <div class="icon">⏱</div>
+            Pending Transactions
+          </button>
+
+          <button class="pd-quick" onclick="openAccountAction('transfer')">
+            <div class="icon">⇄</div>
+            Transfer
+          </button>
+        </div>
+      </div>
+
+      <!-- LIVE TRADING SIGNALS (signed-in crypto users only) -->
+      <div class="pd-section" id="cdSignalsSection">
+        <h2>Live trading signals</h2>
+
+        <div class="signals-box">
+
+          <div class="signals-row signals-head">
+            <span>Asset</span>
+            <span>Signal</span>
+            <span>Entry</span>
+            <span>Take Profit</span>
+            <span>Stop Loss</span>
+          </div>
+
+          <div id="cdSignalsList"></div>
+
+        </div>
+
+        <p class="web3-note">
+          Trading signals are illustrative interface data generated
+          for display purposes. They are not investment advice and are
+          not connected to a live trading engine.
+        </p>
+
+        <p style="margin-top:12px;">
+          <button class="btn btn-outline" onclick="renderTradingSignals()">
+            Refresh Signals
+          </button>
+        </p>
+      </div>
+
+      <!-- PENDING TRANSACTIONS (click a row to enter the one-time token) -->
+      <div class="pd-section" id="cdPendingSection">
+        <h2>Pending transactions</h2>
+
+        <div class="pd-activity-wrap">
+          <div class="pd-activity-head">
+            <span>Request</span>
+            <span>Date</span>
+            <span>Status</span>
+            <span>Amount</span>
+            <span>Action</span>
+          </div>
+          <div id="cdPendingList"></div>
+        </div>
+
+        <p style="font-size:11px;color:var(--muted);margin-top:12px;line-height:1.6;">
+          Click a pending transaction to enter the one-time token supplied by
+          support and begin processing. Funds remain on hold until the token
+          is verified and the request is reviewed. If no token is entered
+          within 24 hours of the request, the transaction expires and the
+          funds are automatically returned to your balance.
+        </p>
+      </div>
+
+      <!-- RECENT ACTIVITY -->
+      <div class="pd-section" id="cdActivitySection">
+        <h2>Recent activity</h2>
+
+        <div class="pd-activity-wrap">
+          <div class="pd-activity-head">
+            <span>Activity</span>
+            <span>Type</span>
+            <span>Date</span>
+            <span>Amount</span>
+            <span>Running balance</span>
+          </div>
+          <div id="cdActivityList"></div>
+        </div>
+      </div>
+
+      <!-- ACCOUNT DETAILS / SUPPORT -->
+      <div class="pd-extra-grid">
+
+        <div class="pd-section" id="cdSettingsSection">
+          <h2>Account details &amp; security</h2>
+
+          <div class="pd-list">
+            <div class="pd-list-item">
+              <strong>Full name</strong>
+              <span id="cdProfileName">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Email</strong>
+              <span id="cdProfileEmail">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>User ID</strong>
+              <span id="cdProfileId">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Member since</strong>
+              <span id="cdProfileSince">—</span>
+            </div>
+            <div class="pd-list-item">
+              <strong>Two-factor authentication</strong>
+              <span id="cd2faStatus">Enabled</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pd-section" id="cdSupportSection">
+          <h2>Contact support</h2>
+
+          <div class="pd-list">
+            <div class="pd-list-item">
+              <strong>Email</strong>
+              <a href="mailto:support@altmanrowecapital.com" style="color:var(--blue);">
+                support@altmanrowecapital.com
+              </a>
+            </div>
+            <div class="pd-list-item">
+              <strong>Live chat</strong>
+              <span>Available via the chat widget</span>
+            </div>
+          </div>
+
+          <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
+            To fund your account by wire transfer, contact support to receive
+            verified deposit account details. For withdrawals, request a
+            one-time verification token through your verified support channel
+            and enter it on the pending transaction. Never share your
+            password or private keys with anyone.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
 
@@ -4564,12 +4800,7 @@ const { data, error } = await supabaseClient.auth.signUp({
 
     function renderTradingSignals() {
 
-      const listEl = document.getElementById("signalsList");
-
-      if (!listEl) return;
-
-
-      listEl.innerHTML = SIGNAL_ASSETS.map(function(asset) {
+      const html = SIGNAL_ASSETS.map(function(asset) {
 
         const direction = Math.random() > 0.45 ? "LONG" : "SHORT";
 
@@ -4610,6 +4841,14 @@ const { data, error } = await supabaseClient.auth.signUp({
         );
 
       }).join("");
+
+
+      // Public dashboard signals (legacy view) + crypto dashboard signals
+      const listEl = document.getElementById("signalsList");
+      if (listEl) listEl.innerHTML = html;
+
+      const cdListEl = document.getElementById("cdSignalsList");
+      if (cdListEl) cdListEl.innerHTML = html;
 
     }
 
@@ -4948,6 +5187,7 @@ const { data, error } = await supabaseClient.auth.signUp({
       stopReconcilePolling();
 
       hidePrivateDashboard();
+      hideCryptoDashboard();
       updateAuthUI(null);
 
       document.getElementById("top").scrollIntoView({
@@ -4996,6 +5236,11 @@ const { data, error } = await supabaseClient.auth.signUp({
       if (!crypto && type === "fund") {
         document.getElementById("actionSubtitle").textContent =
           "Deposit instantly with Bitcoin, Ethereum or USDC using the addresses below. For bank transfer or wire, contact support to receive your verified deposit details.";
+      }
+
+      if (crypto && type === "fund") {
+        document.getElementById("actionSubtitle").textContent =
+          "Deposit instantly with Bitcoin, Ethereum, USDT or USDC using the addresses below. To fund via wire transfer, contact support to receive verified account details.";
       }
 
       // Method select — hidden for crypto internal transfers
@@ -5142,10 +5387,18 @@ const { data, error } = await supabaseClient.auth.signUp({
         return;
       }
 
-      // Funding a crypto account → show OUR deposit address
+      // Funding a crypto account:
+      // Crypto methods → show OUR deposit address.
+      // Wire transfer → refer the user to support for verified account details.
       if (type === "fund") {
         const target = depositMap[method];
-        if (target) document.getElementById(target).classList.remove("hidden");
+        if (target) {
+          document.getElementById(target).classList.remove("hidden");
+        } else {
+          document.getElementById("fundSupportWrap").classList.remove("hidden");
+          amountField.classList.add("hidden");
+          submitButton.classList.add("hidden");
+        }
         return;
       }
 
@@ -5268,9 +5521,7 @@ function openTokenModal(requestId) {
         if (tx) tx.status = "Pending — token verified, awaiting review";
         saveAccountState(currentUser, state);
         renderDashboard(currentUser);
-        if (document.getElementById("privateDashboard").classList.contains("show")) {
-          renderPrivateDashboard(currentUser);
-        }
+        refreshVisibleDashboards();
         msg.textContent = "Token verified. Your request remains pending review; this is not a payment confirmation.";
         msg.style.color = "#15803d";
         document.getElementById("withdrawalToken").value = "";
@@ -5404,9 +5655,7 @@ function openTokenModal(requestId) {
       tx.pending = (status.indexOf("Pending") === 0);
       saveAllAccountState(all);
       renderDashboard(currentUser);
-      if (document.getElementById("privateDashboard").classList.contains("show")) {
-        renderPrivateDashboard(currentUser);
-      }
+      refreshVisibleDashboards();
     }
 
 
@@ -5675,9 +5924,7 @@ function openTokenModal(requestId) {
   });
   saveAccountState(currentUser, state);
   renderDashboard(currentUser);
-  if (document.getElementById("privateDashboard").classList.contains("show")) {
-    renderPrivateDashboard(currentUser);
-  }
+  refreshVisibleDashboards();
   actionMsg.textContent = "Withdrawal submitted. Funds have been deducted from your balance and are held as pending. Contact support for a one-time token to process your withdrawal.";
   actionMsg.style.color = "#15803d";
   showTokenVerificationStep();
@@ -5783,9 +6030,7 @@ function openTokenModal(requestId) {
   });
   saveAccountState(currentUser, state);
   renderDashboard(currentUser);
-  if (document.getElementById("privateDashboard").classList.contains("show")) {
-    renderPrivateDashboard(currentUser);
-  }
+  refreshVisibleDashboards();
   actionMsg.textContent = "Request submitted. Funds have been deducted from your balance and are held as pending. Contact support for a one-time token to process your withdrawal.";
   actionMsg.style.color = "#15803d";
   showTokenVerificationStep();
@@ -5833,9 +6078,7 @@ function openTokenModal(requestId) {
 
       saveAccountState(currentUser, state);
       renderDashboard(currentUser);
-      if (document.getElementById("privateDashboard").classList.contains("show")) {
-        renderPrivateDashboard(currentUser);
-      }
+      refreshVisibleDashboards();
 
       actionMsg.textContent =
         "Request queued. It will remain pending until processed.";
@@ -6087,9 +6330,7 @@ function openTokenModal(requestId) {
       // if admin is viewing their own dashboard, refresh it live
       if (currentUser && currentUser.id === userId) {
         renderDashboard(currentUser);
-        if (document.getElementById("privateDashboard").classList.contains("show")) {
-          renderPrivateDashboard(currentUser);
-        }
+        refreshVisibleDashboards();
       }
 
     }
@@ -6341,14 +6582,303 @@ function openTokenModal(requestId) {
     }
 
 
+    /* ------------------------------
+       CRYPTO DASHBOARD
+       Auth-gated: only Crypto Account
+       users who pass Supabase auth.
+       Shows live trading signals,
+       pending transactions and
+       token-based withdrawals.
+       The 24-hour auto-revert of
+       untokenized requests (exactly
+       once) lives in
+       reconcileWithdrawals().
+    ------------------------------ */
+
+    function cdScrollTo(id) {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+
+
+    function cdNavTo(id, button) {
+      document
+        .querySelectorAll("#cdNavLinks button")
+        .forEach(function(b) { b.classList.remove("active"); });
+
+      if (button) button.classList.add("active");
+
+      if (id === "overview") {
+        document.getElementById("cryptoDashboard").scrollTo({
+          top: 0, behavior: "smooth"
+        });
+        return;
+      }
+
+      cdScrollTo(id);
+    }
+
+
+    async function renderCryptoDashboard(user) {
+
+      currentUser = user;
+
+      const state = await loadAccountState(user);
+      const meta = user.user_metadata || {};
+
+      const firstName = meta.first_name || "Customer";
+      const lastName = meta.last_name || "";
+
+
+      // Greeting
+      document.getElementById("cdGreeting").textContent =
+        greetForHour() + ", " + firstName;
+
+      document.getElementById("cdSubGreeting").textContent =
+        "Here's your digital assets account overview.";
+
+
+      // Balances
+      document.getElementById("cdTotalBalance").textContent =
+        formatUSD(state.digitalAssets);
+
+      document.getElementById("cdAvailableBal").textContent =
+        formatUSD(state.digitalAssets);
+
+      document.getElementById("cdHoldingsBal").textContent =
+        formatUSD(state.digitalAssets);
+
+      document.getElementById("cdChangeBal").textContent = "+0.00%";
+
+
+      // Pending request count (local view; authoritative list renders below)
+      document.getElementById("cdPendingCount").textContent = String(
+        state.transactions.filter(function(t) {
+          return t.pending === true;
+        }).length
+      );
+
+
+      // Live trading signals (signed-in crypto users only)
+      renderTradingSignals();
+
+      renderCryptoPending(state);
+      renderCryptoActivity(state, state.digitalAssets);
+
+
+      // Profile / security details
+      document.getElementById("cdProfileName").textContent =
+        (firstName + " " + lastName).trim() || "Account Holder";
+
+      document.getElementById("cdProfileEmail").textContent =
+        user.email || "—";
+
+      document.getElementById("cdProfileId").textContent =
+        user.id || "—";
+
+      document.getElementById("cdProfileSince").textContent =
+        user.created_at
+          ? new Date(user.created_at).toLocaleDateString("en-US", {
+              year: "numeric", month: "long", day: "numeric"
+            })
+          : "—";
+
+      document.getElementById("cd2faStatus").textContent =
+        user.email_confirmed_at ? "Enabled" : "Pending verification";
+
+    }
+
+
+    function renderCryptoPending(state) {
+
+      const listEl = document.getElementById("cdPendingList");
+      if (!listEl) return;
+
+
+      const renderRows = function(pending) {
+
+        if (!pending.length) {
+
+          listEl.innerHTML =
+            '<div class="pd-activity-row">' +
+              "<strong>No pending transactions</strong>" +
+              "<span>—</span>" +
+              '<span class="pending">—</span>' +
+              "<strong>—</strong>" +
+              "<span>—</span>" +
+            "</div>";
+
+          return;
+
+        }
+
+
+        listEl.innerHTML = pending
+          .slice()
+          .reverse()
+          .map(function(tx) {
+
+            const hasId = !!tx.requestId;
+            const clickAttr = hasId
+              ? ' style="cursor:pointer;" onclick="openTokenModal(\'' + tx.requestId + '\')"'
+              : "";
+
+            return (
+              '<div class="pd-activity-row"' + clickAttr + '>' +
+                "<strong>" + tx.description + "</strong>" +
+                "<span>" + tx.date + "</span>" +
+                '<span class="pending">' + tx.status + "</span>" +
+                "<strong>" + tx.amountLabel + "</strong>" +
+                (hasId
+                  ? '<span style="color:var(--blue);font-weight:700;">Enter token \u2192</span>'
+                  : "<span>—</span>") +
+              "</div>"
+            );
+
+          })
+          .join("");
+
+      };
+
+
+      // Backend first so submitted requests always appear,
+      // local stored transactions as fallback.
+      fetchPendingWithdrawalRows().then(function(rows) {
+
+        if (rows && rows.length) {
+          renderRows(rows);
+        } else {
+          renderRows(
+            (state.transactions || []).filter(function(t) {
+              return t.pending === true;
+            })
+          );
+        }
+
+      });
+
+    }
+
+
+    function renderCryptoActivity(state, total) {
+
+      const listEl = document.getElementById("cdActivityList");
+      if (!listEl) return;
+
+
+      if (!state.transactions.length) {
+
+        listEl.innerHTML =
+          '<div class="pd-activity-row">' +
+            "<strong>No recent activity</strong>" +
+            "<span>—</span><span>—</span>" +
+            '<span class="pending">—</span>' +
+            "<strong>" + formatUSD(total) + "</strong>" +
+          "</div>";
+
+        return;
+
+      }
+
+
+      // Running balance: walk backwards from the current total
+      let running = total;
+
+      listEl.innerHTML = state.transactions
+        .slice()
+        .reverse()
+        .map(function(tx) {
+
+          const signed =
+            tx.amountLabel && tx.amountLabel.indexOf("-") === 0
+              ? -Math.abs(tx.amount || 0)
+              : Math.abs(tx.amount || 0);
+
+          const rowBalance = running;
+          running -= signed;
+
+          const typeLabel =
+            tx.type === "fund" ? "Deposit"
+            : tx.type === "withdraw" ? "Withdrawal"
+            : tx.type === "transfer" ? "Transfer"
+            : tx.type === "admin" ? "Adjustment"
+            : "Payment";
+
+          return (
+            '<div class="pd-activity-row">' +
+              "<strong>" + tx.description + "</strong>" +
+              "<span>" + typeLabel + "</span>" +
+              "<span>" + tx.date + "</span>" +
+              "<strong>" + tx.amountLabel + "</strong>" +
+              "<strong>" + formatUSD(rowBalance) + "</strong>" +
+            "</div>"
+          );
+
+        })
+        .join("");
+
+    }
+
+
+    function showCryptoDashboard(user) {
+
+      renderCryptoDashboard(user);
+
+      const cd = document.getElementById("cryptoDashboard");
+
+      cd.classList.add("show");
+      cd.setAttribute("aria-hidden", "false");
+      document.body.classList.add("private-mode");
+
+      cd.scrollTop = 0;
+
+    }
+
+
+    function hideCryptoDashboard() {
+
+      const cd = document.getElementById("cryptoDashboard");
+
+      if (!cd) return;
+
+      cd.classList.remove("show");
+      cd.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("private-mode");
+
+    }
+
+
+    /* Refresh whichever dashboard is currently visible
+       (banking, crypto, or none). */
+    function refreshVisibleDashboards() {
+
+      if (!currentUser) return;
+
+      if (document.getElementById("privateDashboard").classList.contains("show")) {
+        renderPrivateDashboard(currentUser);
+      }
+
+      if (document.getElementById("cryptoDashboard").classList.contains("show")) {
+        renderCryptoDashboard(currentUser);
+      }
+
+    }
+
+
     function routeAfterAuth(user) {
 
-      // Online Banking users get the private dashboard.
-      // Crypto users keep the public crypto dashboard flow.
+      // Online Banking users get the private banking dashboard.
+      // Crypto users get the dedicated crypto dashboard (live signals,
+      // pending transactions, token-based withdrawals) and nothing else.
       if (user && !isCryptoUser(user)) {
+        hideCryptoDashboard();
         showPrivateDashboard(user);
+      } else if (user) {
+        hidePrivateDashboard();
+        showCryptoDashboard(user);
       } else {
         hidePrivateDashboard();
+        hideCryptoDashboard();
       }
 
     }
