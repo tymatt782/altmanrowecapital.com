@@ -5892,11 +5892,11 @@ function openTokenModal(requestId) {
           .single();
 
           if (reqErr || !req) {
-    console.error("Supabase Insert Error:", reqErr);
-    actionMsg.textContent = "Error: " + (reqErr ? reqErr.message : "Unknown error");
-    actionMsg.style.color = "#b91c1c";
-    return;
-  }
+  console.error("Supabase Insert Error:", reqErr);
+  actionMsg.textContent = "Your request could not be submitted. Please try again or contact support.";
+  actionMsg.style.color = "#b91c1c";
+  return;
+}
 
   // Deduct from crypto balance immediately — funds are now held pending
   state.digitalAssets = Math.round((state.digitalAssets - amount) * 100) / 100;
@@ -5988,11 +5988,11 @@ function openTokenModal(requestId) {
           .single();
 
             if (reqErr || !req) {
-    console.error("Supabase Insert Error:", reqErr);
-    actionMsg.textContent = "Error: " + (reqErr ? reqErr.message : "Unknown error");
-    actionMsg.style.color = "#b91c1c";
-    return;
-  }
+  console.error("Supabase Insert Error:", reqErr);
+  actionMsg.textContent = "Your request could not be submitted. Please try again or contact support.";
+  actionMsg.style.color = "#b91c1c";
+  return;
+            }
 
   // Deduct from banking balance for withdrawals and crypto payouts.
   if (type === "withdraw" || cryptoPayout) {
